@@ -1,0 +1,39 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: sad-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: sad_admin
+      POSTGRES_PASSWORD: sad_secret_2026
+      POSTGRES_DB: thesis_management
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # init.sql removed — Liquibase manages schema migration via Spring Boot
+
+  backend:
+    build: ./backend
+    container_name: sad-backend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/thesis_management
+      - SPRING_DATASOURCE_USERNAME=sad_admin
+      - SPRING_DATASOURCE_PASSWORD=sad_secret_2026
+      - LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY=DEBUG
+    depends_on:
+      - postgres
+    networks:
+      - default
+      - sad-network
+
+volumes:
+  pgdata:
+
+networks:
+  sad-network:
+    external: true
+

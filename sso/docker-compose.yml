@@ -1,0 +1,56 @@
+services:
+  # Database for ZITADEL
+  zitadel-db:
+    image: postgres:16-alpine
+    container_name: zitadel-db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=zitadel
+    volumes:
+      - zitadel-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 2s
+      timeout: 2s
+      retries: 10
+
+  # ZITADEL Service (v3 - Login UI built-in, stable for local dev)
+  zitadel:
+    image: ghcr.io/zitadel/zitadel:v2.42.0
+    container_name: zitadel-sso
+    restart: unless-stopped
+    command: 'start-from-init --masterkey "${ZITADEL_MASTERKEY}" --config /config/zitadel-config.yaml --tlsMode disabled'
+    ports:
+      - "18080:8080"
+    environment:
+      - ZITADEL_DATABASE_POSTGRES_HOST=zitadel-db
+      - ZITADEL_DATABASE_POSTGRES_PORT=5432
+      - ZITADEL_DATABASE_POSTGRES_DATABASE=zitadel
+      - ZITADEL_DATABASE_POSTGRES_USER_USERNAME=postgres
+      - ZITADEL_DATABASE_POSTGRES_USER_PASSWORD=postgres
+      - ZITADEL_DATABASE_POSTGRES_USER_SSL_MODE=disable
+      - ZITADEL_DATABASE_POSTGRES_ADMIN_USERNAME=postgres
+      - ZITADEL_DATABASE_POSTGRES_ADMIN_PASSWORD=postgres
+      - ZITADEL_DATABASE_POSTGRES_ADMIN_SSL_MODE=disable
+      - ZITADEL_EXTERNALDOMAIN=localhost
+      - ZITADEL_EXTERNALPORT=18080
+      - ZITADEL_FIRSTINSTANCE_ORG_HUMAN_USERNAME=admin
+      - ZITADEL_FIRSTINSTANCE_ORG_HUMAN_PASSWORD=Password123!
+      - ZITADEL_DEFAULTINSTANCE_LOGINVERSION=1
+    volumes:
+      - ./zitadel-config.yaml:/config/zitadel-config.yaml
+    depends_on:
+      zitadel-db:
+        condition: service_healthy
+    networks:
+      - default
+      - sad-network
+
+volumes:
+  zitadel-data:
+
+networks:
+  sad-network:
+    external: true

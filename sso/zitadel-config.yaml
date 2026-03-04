@@ -1,0 +1,51 @@
+Log:
+  Level: info
+
+HTTP:
+  Port: 8080
+
+ExternalDomain: localhost
+ExternalPort: 18080
+ExternalSecure: false
+
+# Cấu hình Database cho v2.42.0 (Khuyên dùng Postgres cho ổn định)
+Database:
+  Postgres:
+    Host: zitadel-db
+    Port: 5432
+    Database: zitadel
+    User:
+      Username: postgres
+      Password: postgres
+      SSL:
+        Mode: disable
+    Admin:
+      Username: postgres
+      Password: postgres
+      SSL:
+        Mode: disable
+
+# Cấu hình khởi tạo Instance lần đầu
+FirstInstance:
+  Org:
+    Name: 'Phenikaa University'
+    Human:
+      # Theo docs: field phải là UserName (camel-case)
+      UserName: 'zitadel-admin'
+      FirstName: 'Phenikaa'
+      LastName: 'Admin'
+      Email: 'admin@zitadel.localhost'
+      # Mật khẩu admin
+      Password: 'Password123!'
+
+# Cấu hình SMTP để gửi email thực qua Gmail
+Notifications:
+  Providers:
+    Email:
+      SMTP:
+        SenderAddress: 'vnhat.dev@gmail.com'
+        SenderName: 'Thesis Management System'
+        Host: 'smtp.gmail.com:587'
+        TLS: true
+        User: 'vnhat.dev@gmail.com'
+        Password: 'pldcmoatehatrwzo'
