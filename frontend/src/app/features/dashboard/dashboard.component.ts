@@ -83,9 +83,7 @@ import { MatIconModule } from '@angular/material/icon';
           <div class="bg-white overflow-hidden shadow rounded-lg">
             <div class="p-5">
               <div class="flex items-center">
-                <div class="flex-shrink-0">
-                  <mat-icon class="text-gray-400 text-3xl">library_books</mat-icon>
-                </div>
+                <div class="flex-shrink-0"><mat-icon class="text-gray-400 text-3xl">library_books</mat-icon></div>
                 <div class="ml-5 w-0 flex-1">
                   <dl>
                     <dt class="text-sm font-medium text-gray-500 truncate">Đề tài của tôi</dt>
@@ -98,9 +96,7 @@ import { MatIconModule } from '@angular/material/icon';
           <div class="bg-white overflow-hidden shadow rounded-lg">
             <div class="p-5">
               <div class="flex items-center">
-                <div class="flex-shrink-0">
-                  <mat-icon class="text-indigo-600 text-3xl">how_to_reg</mat-icon>
-                </div>
+                <div class="flex-shrink-0"><mat-icon class="text-indigo-600 text-3xl">how_to_reg</mat-icon></div>
                 <div class="ml-5 w-0 flex-1">
                   <dl>
                     <dt class="text-sm font-medium text-gray-500 truncate">Yêu cầu đăng ký</dt>
@@ -113,9 +109,7 @@ import { MatIconModule } from '@angular/material/icon';
           <div class="bg-white overflow-hidden shadow rounded-lg">
             <div class="p-5">
               <div class="flex items-center">
-                <div class="flex-shrink-0">
-                  <mat-icon class="text-yellow-500 text-3xl">description</mat-icon>
-                </div>
+                <div class="flex-shrink-0"><mat-icon class="text-yellow-500 text-3xl">description</mat-icon></div>
                 <div class="ml-5 w-0 flex-1">
                   <dl>
                     <dt class="text-sm font-medium text-gray-500 truncate">Đề cương chờ duyệt</dt>
@@ -128,9 +122,7 @@ import { MatIconModule } from '@angular/material/icon';
           <div class="bg-white overflow-hidden shadow rounded-lg">
             <div class="p-5">
               <div class="flex items-center">
-                <div class="flex-shrink-0">
-                  <mat-icon class="text-green-500 text-3xl">group</mat-icon>
-                </div>
+                <div class="flex-shrink-0"><mat-icon class="text-green-500 text-3xl">group</mat-icon></div>
                 <div class="ml-5 w-0 flex-1">
                   <dl>
                     <dt class="text-sm font-medium text-gray-500 truncate">SV đang hướng dẫn</dt>
@@ -140,6 +132,68 @@ import { MatIconModule } from '@angular/material/icon';
               </div>
             </div>
           </div>
+        </div>
+      }
+
+      @if (auth.currentUser()?.activeRole === 'TRAINING_DEPT') {
+        <div class="grid grid-cols-1 gap-5 sm:grid-cols-3">
+          <div class="bg-indigo-600 shadow rounded-lg p-5 text-white">
+            <div class="flex items-center">
+              <mat-icon class="text-3xl mr-4">calendar_today</mat-icon>
+              <div>
+                <p class="text-sm opacity-80 uppercase">Đợt đang chạy</p>
+                <p class="text-2xl font-bold">2</p>
+              </div>
+            </div>
+          </div>
+          <div class="bg-white shadow rounded-lg p-5">
+            <div class="flex items-center">
+              <mat-icon class="text-blue-500 text-3xl mr-4">school</mat-icon>
+              <div>
+                <p class="text-sm text-gray-500 uppercase">Tổng sinh viên</p>
+                <p class="text-2xl font-bold text-gray-900">450</p>
+              </div>
+            </div>
+          </div>
+          <div class="bg-white shadow rounded-lg p-5">
+            <div class="flex items-center">
+              <mat-icon class="text-green-500 text-3xl mr-4">assignment_ind</mat-icon>
+              <div>
+                <p class="text-sm text-gray-500 uppercase">Giảng viên tham gia</p>
+                <p class="text-2xl font-bold text-gray-900">85</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+
+      @if (auth.currentUser()?.activeRole === 'DEPT_HEAD') {
+        <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div class="bg-white shadow rounded-lg p-5">
+            <div class="flex items-center">
+              <mat-icon class="text-orange-500 mr-4">pending_actions</mat-icon>
+              <div>
+                <p class="text-sm text-gray-500">Đề tài chờ duyệt ngành</p>
+                <p class="text-2xl font-bold text-gray-900">18</p>
+              </div>
+            </div>
+          </div>
+          <div class="bg-white shadow rounded-lg p-5">
+            <div class="flex items-center">
+              <mat-icon class="text-indigo-500 mr-4">assignment_turned_in</mat-icon>
+              <div>
+                <p class="text-sm text-gray-500">Hội đồng đã lập</p>
+                <p class="text-2xl font-bold text-gray-900">5</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+
+      @if (auth.currentUser()?.activeRole === 'ADMIN') {
+        <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+          <h3 class="text-red-800 font-bold mb-2 font-medium">Quản trị hệ thống</h3>
+          <p class="text-red-600">Bạn đang truy cập với quyền cao nhất. Hãy cẩn trọng khi thay đổi cấu hình hệ thống.</p>
         </div>
       }
     </div>

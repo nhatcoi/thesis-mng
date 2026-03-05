@@ -1,7 +1,9 @@
 import { Injectable, signal, computed, inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
 import { OAuthService, AuthConfig } from 'angular-oauth2-oidc';
+import { firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 export type Role = 'ADMIN' | 'TRAINING_DEPT' | 'DEPT_HEAD' | 'LECTURER' | 'STUDENT';
@@ -12,6 +14,7 @@ export interface User {
   email: string;
   roles: Role[];
   activeRole: Role;
+  localRole?: Role;
 }
 
 const ROLE_LABELS: Record<Role, string> = {
@@ -24,11 +27,20 @@ const ROLE_LABELS: Record<Role, string> = {
 
 const ROLES_CLAIM = 'urn:zitadel:iam:org:project:roles';
 
+const ROLE_HOME: Record<Role, string> = {
+  ADMIN: '/pdt/batches',
+  TRAINING_DEPT: '/pdt/batches',
+  DEPT_HEAD: '/head/topics',
+  LECTURER: '/lecturer/topics',
+  STUDENT: '/dashboard',
+};
+
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private platformId = inject(PLATFORM_ID);
   private oauthService = inject(OAuthService);
   private router = inject(Router);
+  private http = inject(HttpClient);
 
   currentUser = signal<User | null>(null);
   isLoggedIn = computed(() => !!this.currentUser());
@@ -39,7 +51,6 @@ export class AuthService {
   });
 
   async init(): Promise<void> {
-    // Bỏ qua trên server (SSR)
     if (!isPlatformBrowser(this.platformId)) {
       this._readyResolve();
       return;
@@ -63,18 +74,56 @@ export class AuthService {
       await this.oauthService.loadDiscoveryDocumentAndTryLogin();
 
       if (this.oauthService.hasValidAccessToken()) {
+        // 1. Khởi tạo nháp từ Token
         this.buildUserFromToken();
 
-        if (!hadTokenBefore) {
-          console.log('[AuthService] Login OK, chuyển /dashboard');
-          this.router.navigateByUrl('/dashboard');
+        // 2. Lấy dữ liệu CHÍNH XÁC từ Backend
+        try {
+          const res = await firstValueFrom(this.http.get<any>(`${environment.apiUrl}/auth/me`));
+          const backendUser = res.data;
+
+          const backendRoles = (backendUser.roles || []) as Role[];
+          const backendLocalRole = backendUser.local_role as Role;
+
+          // Chọn active role
+          const savedRole = sessionStorage.getItem('activeRole') as Role;
+          let activeRole: Role = (savedRole && backendRoles.includes(savedRole))
+            ? savedRole
+            : (backendRoles[0] || backendLocalRole || 'STUDENT');
+
+          // Cập nhật User State
+          const current = this.currentUser();
+          if (current) {
+            this.currentUser.set({
+              ...current,
+              roles: backendRoles,
+              localRole: backendLocalRole,
+              activeRole
+            });
+            console.log(`[AuthService] Đã đồng bộ Role từ Backend: ${activeRole}`);
+          }
+
+          if (!hadTokenBefore) {
+            const homePath = ROLE_HOME[activeRole] || '/dashboard';
+            console.log(`[AuthService] Login OK → ${homePath}`);
+            this.router.navigateByUrl(homePath);
+          }
+        } catch (apiError) {
+          console.error('[AuthService] Lỗi đồng bộ Backend:', apiError);
+          this.clearLocalState();
+          this.router.navigate(['/unauthorized']);
         }
       }
     } catch (err) {
-      console.error('[AuthService] Init lỗi:', err);
+      console.error('[AuthService] OAuth Init Error:', err);
     } finally {
       this._readyResolve();
     }
+  }
+
+  private clearLocalState(): void {
+    this.currentUser.set(null);
+    sessionStorage.removeItem('activeRole');
   }
 
   login(): void {
@@ -82,8 +131,7 @@ export class AuthService {
   }
 
   logout(): void {
-    this.currentUser.set(null);
-    sessionStorage.removeItem('activeRole');
+    this.clearLocalState();
     this.oauthService.logOut();
   }
 
@@ -92,63 +140,38 @@ export class AuthService {
     if (user && user.roles.includes(role)) {
       this.currentUser.set({ ...user, activeRole: role });
       sessionStorage.setItem('activeRole', role);
+      this.router.navigateByUrl(ROLE_HOME[role] || '/dashboard');
     }
   }
 
-  /**
-   * Get current access token (for HTTP interceptor / manual calls).
-   */
   getAccessToken(): string | null {
     return this.oauthService.getAccessToken() ?? null;
   }
 
   private buildUserFromToken(): void {
-    const idClaims = this.oauthService.getIdentityClaims() as Record<string, unknown> | null;
+    const idClaims = this.oauthService.getIdentityClaims() as any;
     if (!idClaims) return;
 
     const roles = this.extractRoles();
-    const savedRole = sessionStorage.getItem('activeRole') as Role | null;
-    const activeRole = savedRole && roles.includes(savedRole)
-      ? savedRole
-      : roles[0] ?? 'STUDENT';
-
     this.currentUser.set({
-      sub: (idClaims['sub'] as string) ?? '',
-      name: (idClaims['name'] as string) ?? '',
-      email: (idClaims['email'] as string) ?? '',
-      roles,
-      activeRole,
+      sub: idClaims.sub,
+      name: idClaims.name || idClaims.preferred_username,
+      email: idClaims.email,
+      roles: roles,
+      activeRole: roles[0] || 'STUDENT'
     });
   }
 
   private extractRoles(): Role[] {
-    return this.extractRolesFromJwt(this.oauthService.getAccessToken())
-      ?? this.extractRolesFromClaims(this.oauthService.getIdentityClaims())
-      ?? [];
-  }
-
-  private extractRolesFromJwt(token: string | null): Role[] | null {
-    if (!token) return null;
+    const token = this.oauthService.getAccessToken();
+    if (!token) return [];
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
-      return this.parseRolesClaim(payload[ROLES_CLAIM]);
+      const rolesObj = payload[ROLES_CLAIM] || {};
+      return Object.keys(rolesObj).map(r => r.toUpperCase() as Role);
     } catch {
-      return null;
+      return [];
     }
-  }
-
-  private extractRolesFromClaims(claims: object | null): Role[] | null {
-    if (!claims) return null;
-    return this.parseRolesClaim((claims as Record<string, unknown>)[ROLES_CLAIM]);
-  }
-
-  private parseRolesClaim(rolesObj: unknown): Role[] | null {
-    if (!rolesObj || typeof rolesObj !== 'object') return null;
-    const keys = Object.keys(rolesObj as Record<string, unknown>);
-    if (keys.length === 0) return null;
-    return keys
-      .map(r => r.toUpperCase() as Role)
-      .filter(r => r in ROLE_LABELS);
   }
 
   static roleLabel(role: Role): string {

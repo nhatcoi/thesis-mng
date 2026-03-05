@@ -5,6 +5,7 @@ import { AuthService } from './core/auth.service';
 import { LayoutComponent } from './layout/layout.component';
 import { LoginComponent } from './features/login/login.component';
 import { DashboardComponent } from './features/dashboard/dashboard.component';
+import { UnauthorizedComponent } from './features/unauthorized/unauthorized.component';
 
 const authGuard = async () => {
   const auth = inject(AuthService);
@@ -26,6 +27,7 @@ const loginGuard = async () => {
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent, canActivate: [loginGuard] },
+  { path: 'unauthorized', component: UnauthorizedComponent },
   {
     path: '',
     component: LayoutComponent,
