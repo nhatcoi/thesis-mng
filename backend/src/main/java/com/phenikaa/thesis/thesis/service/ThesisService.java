@@ -80,6 +80,15 @@ public class ThesisService {
                                         + thesis.getAdvisor().getUser().getFirstName()
                                 : "Chưa có")
                 .status(thesis.getStatus())
+                .majorId(thesis.getStudent().getMajor() != null ? thesis.getStudent().getMajor().getId() : null)
+                .majorName(thesis.getStudent().getMajor() != null ? thesis.getStudent().getMajor().getName() : null)
+                .facultyId(thesis.getStudent().getMajor() != null && thesis.getStudent().getMajor().getFaculty() != null
+                        ? thesis.getStudent().getMajor().getFaculty().getId()
+                        : null)
+                .facultyName(
+                        thesis.getStudent().getMajor() != null && thesis.getStudent().getMajor().getFaculty() != null
+                                ? thesis.getStudent().getMajor().getFaculty().getName()
+                                : null)
                 .build();
     }
 }
