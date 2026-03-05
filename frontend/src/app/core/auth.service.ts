@@ -9,12 +9,22 @@ import { environment } from '../../environments/environment';
 export type Role = 'ADMIN' | 'TRAINING_DEPT' | 'DEPT_HEAD' | 'LECTURER' | 'STUDENT';
 
 export interface User {
+  id: string; // local_user_id từ backend
   sub: string;
   name: string;
   email: string;
   roles: Role[];
   activeRole: Role;
   localRole?: Role;
+}
+
+export interface AuthCheckResult {
+  allowed: boolean;
+  reasonCode: string;
+  message: string;
+  localUserId?: string;
+  localRole?: Role;
+  tokenRoles: Role[];
 }
 
 const ROLE_LABELS: Record<Role, string> = {
@@ -44,6 +54,7 @@ export class AuthService {
 
   currentUser = signal<User | null>(null);
   isLoggedIn = computed(() => !!this.currentUser());
+  loginDenied = signal<AuthCheckResult | null>(null);
 
   private _readyResolve!: () => void;
   readonly ready$ = new Promise<void>(resolve => {
@@ -61,12 +72,17 @@ export class AuthService {
       clientId: environment.sso.clientId,
       redirectUri: environment.sso.redirectUri,
       postLogoutRedirectUri: environment.sso.postLogoutRedirectUri,
+      silentRefreshRedirectUri: window.location.origin + '/assets/silent-refresh.html',
       responseType: 'code',
       scope: environment.sso.scope,
-      useSilentRefresh: false,
+      useSilentRefresh: true,
+      timeoutFactor: 0.75,
       showDebugInformation: !environment.production,
       requireHttps: environment.production,
     } satisfies AuthConfig);
+
+    // Tự gia hạn token (nếu IdP hỗ trợ)
+    this.oauthService.setupAutomaticSilentRefresh();
 
     const hadTokenBefore = this.oauthService.hasValidAccessToken();
 
@@ -74,48 +90,54 @@ export class AuthService {
       await this.oauthService.loadDiscoveryDocumentAndTryLogin();
 
       if (this.oauthService.hasValidAccessToken()) {
-        // 1. Khởi tạo nháp từ Token
         this.buildUserFromToken();
 
-        // 2. Lấy dữ liệu CHÍNH XÁC từ Backend
         try {
-          const res = await firstValueFrom(this.http.get<any>(`${environment.apiUrl}/auth/me`));
-          const backendUser = res.data;
+          // Gate: chỉ cho vào hệ thống nếu backend xác nhận
+          const checkRes = await firstValueFrom(this.http.get<any>(`${environment.apiUrl}/auth/check`));
+          const check = checkRes.data as AuthCheckResult;
 
-          const backendRoles = (backendUser.roles || []) as Role[];
-          const backendLocalRole = backendUser.local_role as Role;
+          if (!check.allowed) {
+            this.loginDenied.set(check);
+            this.clearLocalState();
+            this.router.navigateByUrl('/no-access');
+            return;
+          }
 
-          // Chọn active role
+          // Lấy thông tin user + roles từ backend
+          const meRes = await firstValueFrom(this.http.get<any>(`${environment.apiUrl}/auth/me`));
+          const me = meRes.data;
+          const backendRoles = (me.roles || []) as Role[];
+          const backendLocalRole = me.local_role as Role;
+
           const savedRole = sessionStorage.getItem('activeRole') as Role;
-          let activeRole: Role = (savedRole && backendRoles.includes(savedRole))
+          const activeRole: Role = (savedRole && backendRoles.includes(savedRole))
             ? savedRole
             : (backendRoles[0] || backendLocalRole || 'STUDENT');
 
-          // Cập nhật User State
           const current = this.currentUser();
           if (current) {
             this.currentUser.set({
               ...current,
+              id: me.local_user_id,
               roles: backendRoles,
               localRole: backendLocalRole,
               activeRole
             });
-            console.log(`[AuthService] Đã đồng bộ Role từ Backend: ${activeRole}`);
           }
 
           if (!hadTokenBefore) {
             const homePath = ROLE_HOME[activeRole] || '/dashboard';
-            console.log(`[AuthService] Login OK → ${homePath}`);
             this.router.navigateByUrl(homePath);
           }
         } catch (apiError) {
-          console.error('[AuthService] Lỗi đồng bộ Backend:', apiError);
+          console.error('[AuthService] Lỗi gọi backend:', apiError);
           this.clearLocalState();
-          this.router.navigate(['/unauthorized']);
+          this.router.navigateByUrl('/no-access');
         }
       }
     } catch (err) {
-      console.error('[AuthService] OAuth Init Error:', err);
+      console.error('[AuthService] OAuth lỗi:', err);
     } finally {
       this._readyResolve();
     }
@@ -123,6 +145,7 @@ export class AuthService {
 
   private clearLocalState(): void {
     this.currentUser.set(null);
+    this.loginDenied.set(null);
     sessionStorage.removeItem('activeRole');
   }
 
@@ -154,6 +177,7 @@ export class AuthService {
 
     const roles = this.extractRoles();
     this.currentUser.set({
+      id: '', // Sẽ được cập nhật sau khi gọi /auth/me
       sub: idClaims.sub,
       name: idClaims.name || idClaims.preferred_username,
       email: idClaims.email,
@@ -163,12 +187,28 @@ export class AuthService {
   }
 
   private extractRoles(): Role[] {
+    // Ưu tiên access_token nếu là JWT, fallback sang id_token claims
     const token = this.oauthService.getAccessToken();
+    const fromToken = this.extractRolesFromJwt(token);
+    if (fromToken.length > 0) return fromToken;
+
+    const claims = this.oauthService.getIdentityClaims() as any;
+    const rolesObj = (claims && claims[ROLES_CLAIM]) ? claims[ROLES_CLAIM] : {};
+    return Object.keys(rolesObj)
+      .map(r => r.toUpperCase() as Role)
+      .filter(r => r in ROLE_LABELS);
+  }
+
+  private extractRolesFromJwt(token: string | null): Role[] {
     if (!token) return [];
+    const dotCount = (token.match(/\./g) || []).length;
+    if (dotCount !== 2) return [];
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
       const rolesObj = payload[ROLES_CLAIM] || {};
-      return Object.keys(rolesObj).map(r => r.toUpperCase() as Role);
+      return Object.keys(rolesObj)
+        .map((r: string) => r.toUpperCase() as Role)
+        .filter((r: Role) => r in ROLE_LABELS);
     } catch {
       return [];
     }

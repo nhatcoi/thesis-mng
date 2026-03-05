@@ -4,7 +4,7 @@ export const environment = {
   sso: {
     issuer: 'http://localhost:18080',
     clientId: '362708277525544962@thesis_management_system',
-    scope: 'openid profile email urn:zitadel:iam:org:project:roles',
+    scope: 'openid profile email offline_access urn:zitadel:iam:org:project:roles',
     redirectUri: 'http://localhost:4200',
     postLogoutRedirectUri: 'http://localhost:4200/login',
   },

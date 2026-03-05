@@ -6,6 +6,7 @@ import com.phenikaa.thesis.batch.dto.ThesisBatchUpdateRequest;
 import com.phenikaa.thesis.batch.entity.enums.BatchStatus;
 import com.phenikaa.thesis.batch.service.ThesisBatchService;
 import com.phenikaa.thesis.common.dto.ApiResponse;
+import com.phenikaa.thesis.config.SecurityRoles;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,7 +27,7 @@ public class ThesisBatchController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN','TRAINING_DEPT')")
+    @PreAuthorize("hasAnyRole('" + SecurityRoles.ADMIN + "','" + SecurityRoles.TRAINING_DEPT + "')")
     public ResponseEntity<ApiResponse<ThesisBatchResponse>> create(
             @Valid @RequestBody ThesisBatchCreateRequest request) {
         ThesisBatchResponse resp = thesisBatchService.createBatch(request);
@@ -48,7 +49,7 @@ public class ThesisBatchController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN','TRAINING_DEPT')")
+    @PreAuthorize("hasAnyRole('" + SecurityRoles.ADMIN + "','" + SecurityRoles.TRAINING_DEPT + "')")
     public ResponseEntity<ApiResponse<ThesisBatchResponse>> update(
             @PathVariable UUID id,
             @Valid @RequestBody ThesisBatchUpdateRequest request) {
@@ -57,21 +58,21 @@ public class ThesisBatchController {
     }
 
     @PatchMapping("/{id}/activate")
-    @PreAuthorize("hasAnyRole('ADMIN','TRAINING_DEPT')")
+    @PreAuthorize("hasAnyRole('" + SecurityRoles.ADMIN + "','" + SecurityRoles.TRAINING_DEPT + "')")
     public ResponseEntity<ApiResponse<ThesisBatchResponse>> activate(@PathVariable UUID id) {
         return ResponseEntity.ok(
                 ApiResponse.ok("Kích hoạt đợt đồ án thành công", thesisBatchService.activateBatch(id)));
     }
 
     @PatchMapping("/{id}/close")
-    @PreAuthorize("hasAnyRole('ADMIN','TRAINING_DEPT')")
+    @PreAuthorize("hasAnyRole('" + SecurityRoles.ADMIN + "','" + SecurityRoles.TRAINING_DEPT + "')")
     public ResponseEntity<ApiResponse<ThesisBatchResponse>> close(@PathVariable UUID id) {
         return ResponseEntity.ok(
                 ApiResponse.ok("Đóng đợt đồ án thành công", thesisBatchService.closeBatch(id)));
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN','TRAINING_DEPT')")
+    @PreAuthorize("hasAnyRole('" + SecurityRoles.ADMIN + "','" + SecurityRoles.TRAINING_DEPT + "')")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable UUID id) {
         thesisBatchService.deleteBatch(id);
         return ResponseEntity.ok(ApiResponse.ok("Xoá đợt đồ án thành công", null));

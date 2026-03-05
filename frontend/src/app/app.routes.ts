@@ -5,7 +5,7 @@ import { AuthService } from './core/auth.service';
 import { LayoutComponent } from './layout/layout.component';
 import { LoginComponent } from './features/login/login.component';
 import { DashboardComponent } from './features/dashboard/dashboard.component';
-import { UnauthorizedComponent } from './features/unauthorized/unauthorized.component';
+import { NoAccessComponent } from './features/no-access/no-access.component';
 
 const authGuard = async () => {
   const auth = inject(AuthService);
@@ -27,7 +27,7 @@ const loginGuard = async () => {
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent, canActivate: [loginGuard] },
-  { path: 'unauthorized', component: UnauthorizedComponent },
+  { path: 'no-access', component: NoAccessComponent },
   {
     path: '',
     component: LayoutComponent,
@@ -36,6 +36,8 @@ export const routes: Routes = [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       { path: 'dashboard', component: DashboardComponent },
       { path: 'pdt/batches', loadComponent: () => import('./features/pdt/batches.component').then(m => m.BatchesComponent) },
+      { path: 'pdt/batches/create', loadComponent: () => import('./features/pdt/batch-create.component').then(m => m.BatchCreateComponent) },
+      { path: 'pdt/academic-years', loadComponent: () => import('./features/pdt/academic-years.component').then(m => m.AcademicYearsComponent) },
       { path: 'pdt/import', loadComponent: () => import('./features/pdt/import.component').then(m => m.ImportComponent) },
       { path: 'head/students', loadComponent: () => import('./features/head/students.component').then(m => m.StudentsComponent) },
       { path: 'head/topics', loadComponent: () => import('./features/head/topics.component').then(m => m.TopicsComponent) },

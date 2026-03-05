@@ -1,0 +1,14 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>silent refresh</title>
+  </head>
+  <body>
+    <script>
+      // Dùng cho angular-oauth2-oidc (silent refresh trong iframe)
+      window.location.hash = window.location.hash || '';
+    </script>
+  </body>
+</html>
+

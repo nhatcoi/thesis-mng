@@ -14,10 +14,12 @@ interface MenuItem {
 const MENU_MAP: Record<string, MenuItem[]> = {
   ADMIN: [
     { path: '/pdt/batches', label: 'Quản lý đợt đồ án', icon: 'date_range', exact: false },
+    { path: '/pdt/academic-years', label: 'Quản lý niên khóa', icon: 'calendar_today', exact: false },
     { path: '/pdt/import', label: 'Import sinh viên', icon: 'group_add', exact: false },
   ],
   TRAINING_DEPT: [
     { path: '/pdt/batches', label: 'Quản lý đợt đồ án', icon: 'date_range', exact: false },
+    { path: '/pdt/academic-years', label: 'Quản lý niên khóa', icon: 'calendar_today', exact: false },
     { path: '/pdt/import', label: 'Import sinh viên', icon: 'group_add', exact: false },
   ],
   DEPT_HEAD: [
