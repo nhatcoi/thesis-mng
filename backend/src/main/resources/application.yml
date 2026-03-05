@@ -44,8 +44,8 @@ spring:
       client:
         registration:
           zitadel:
-            client-id: 362625594153828355@thesis-management
-            client-secret: yJ1uYXfsaatuE5BhIrtxD3FjCPRXVxYakMQvlLoWjcAXjLTlce5WDGA0Zund1mdc
+            client-id: 362704457538011138@thesis_management_system
+            client-secret: agPaB6vl8QpA8xSl28blUpBI0RV5AbCeL7hFsoavbC0xPT8gsqhWoxyzAA4nkY0U
             scope: openid,profile,email
             authorization-grant-type: authorization_code
             redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"

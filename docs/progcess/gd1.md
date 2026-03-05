@@ -529,3 +529,130 @@ Tính năng **"Khởi tạo đợt đồ án"** đã được phát triển hoà
 Backend đã build thành công và đang chạy tại `http://localhost:8080`. Swagger UI truy cập tại `http://localhost:8080/swagger-ui.html`.
 
 
+------ UI ----
+APP ROOT
+├─ Đăng nhập (SSO Zitadel)
+│  ├─ Chọn vai trò (nếu user có nhiều role)
+│  └─ Chuyển về Dashboard theo vai trò chính
+│
+├─ Dashboard
+│  ├─ Thông tin đợt đồ án hiện tại (ACTIVE / tên / mốc thời gian)
+│  ├─ Trạng thái đồ án của người dùng (nếu là sinh viên)
+│  └─ Menu điều hướng theo role (PĐT / Trưởng ngành / Giảng viên / Sinh viên)
+│
+├─ Phòng Đào tạo (PĐT)
+│  ├─ Quản lý đợt đồ án
+│  │  ├─ Danh sách đợt đồ án
+│  │  │  ├─ Tạo mới đợt (tên, khóa, HK, năm)
+│  │  │  ├─ Thiết lập mốc thời gian:
+│  │  │  │  ├─ Đăng ký đề tài
+│  │  │  │  ├─ Nộp đề cương
+│  │  │  │  ├─ Thực hiện đồ án
+│  │  │  │  └─ Đăng ký bảo vệ
+│  │  │  └─ Đổi trạng thái: DRAFT → ACTIVE → CLOSED (theo rule)
+│  │  └─ Chi tiết 1 đợt:
+│  │     ├─ Timeline, trạng thái
+│  │     └─ Thống kê nhanh (số SV eligible, số đề tài, …)
+│  │
+│  └─ Import sinh viên
+│     ├─ Upload file (students_xxx.xlsx)
+│     ├─ Map cột → preview dữ liệu
+│     ├─ Validate (format, thiếu cột)
+│     └─ Kết quả:
+│        ├─ Danh sách SV + trạng thái: ELIGIBLE_FOR_THESIS / NOT_ELIGIBLE
+│        └─ Xuất log lỗi (nếu có)
+│
+├─ Trưởng ngành
+│  ├─ Danh sách sinh viên đồ án (theo ngành)
+│  │  ├─ Filter: đợt, khóa, trạng thái eligibility
+│  │  ├─ Xem chỉ sinh viên ELIGIBLE_FOR_THESIS
+│  │  └─ Xem chi tiết 1 SV:
+│  │     ├─ Thông tin học tập (GPA, tín chỉ, nợ môn)
+│  │     └─ Trạng thái đồ án hiện tại (nếu đã vào flow)
+│  │
+│  └─ Quản lý đề tài sinh viên đề xuất (không chỉ định GV)
+│     ├─ Danh sách đề tài đề xuất
+│     ├─ Xem chi tiết (mô tả, SV đề xuất)
+│     └─ Phân công giảng viên:
+│        └─ Chọn GV → set TOPIC_ASSIGNED
+│
+├─ Giảng viên
+│  ├─ Quản lý đề tài của tôi
+│  │  ├─ Danh sách đề tài (AVAILABLE / đủ slot / hết slot)
+│  │  ├─ Tạo / sửa / ẩn đề tài
+│  │  └─ Xem số SV đã nhận / còn slot
+│  │
+│  ├─ Yêu cầu đăng ký đề tài
+│  │  ├─ Danh sách yêu cầu (TOPIC_PENDING_APPROVAL)
+│  │  ├─ Xem chi tiết SV (GPA, credits, ghi chú)
+│  │  └─ Quyết định:
+│  │     ├─ Chấp nhận → TOPIC_APPROVED (gán SV vào đề tài)
+│  │     └─ Từ chối → TOPIC_REJECTED
+│  │
+│  ├─ Duyệt đề cương
+│  │  ├─ Danh sách đề cương chờ duyệt (OUTLINE_SUBMITTED)
+│  │  ├─ Xem file đề cương + lịch sử nộp
+│  │  └─ Quyết định:
+│  │     ├─ Duyệt → OUTLINE_APPROVED
+│  │     └─ Từ chối → OUTLINE_REJECTED + nhập nhận xét
+│  │
+│  ├─ Theo dõi tiến độ đồ án
+│  │  ├─ Danh sách SV/nhóm đang IN_PROGRESS
+│  │  ├─ Timeline cập nhật tiến độ (log: ngày, nội dung, file demo)
+│  │  └─ Nhập nhận xét từng mốc (đạt/không đạt, góp ý)
+│  │
+│  └─ Duyệt đăng ký bảo vệ
+│     ├─ Danh sách yêu cầu DEFENSE_REQUESTED
+│     ├─ Xem hồ sơ:
+│     │  ├─ Báo cáo cuối
+│     │  ├─ Source code
+│     │  └─ Slide
+│     └─ Quyết định:
+│        ├─ Duyệt → DEFENSE_APPROVED + READY_FOR_DEFENSE
+│        └─ Từ chối → DEFENSE_REJECTED + lý do
+│
+└─ Sinh viên
+   ├─ Dashboard đồ án của tôi
+   │  ├─ Thông tin đợt + deadline theo tuần (1–13)
+   │  ├─ Trạng thái hiện tại:
+   │  │  ├─ ELIGIBLE_FOR_THESIS
+   │  │  ├─ TOPIC_PENDING_APPROVAL / APPROVED / REJECTED
+   │  │  ├─ OUTLINE_SUBMITTED / APPROVED / REJECTED
+   │  │  ├─ IN_PROGRESS
+   │  │  ├─ DEFENSE_REQUESTED
+   │  │  └─ DEFENSE_APPROVED / REJECTED
+   │  └─ Checklist việc cần làm tiếp theo
+   │
+   ├─ Đăng ký / đề xuất đề tài
+   │  ├─ Tab 1: Chọn đề tài có sẵn
+   │  │  ├─ Danh sách đề tài AVAILABLE (lọc theo ngành)
+   │  │  ├─ Xem chi tiết đề tài
+   │  │  └─ Nút "Đăng ký" → tạo TOPIC_PENDING_APPROVAL
+   │  └─ Tab 2: Đề xuất đề tài mới
+   │     ├─ Form mô tả đề tài
+   │     ├─ Chọn:
+   │     │  ├─ Có đề xuất giảng viên → gửi cho GV đó
+   │     │  └─ Không đề xuất → gửi cho Trưởng ngành
+   │     └─ Xem trạng thái: TOPIC_APPROVED / REJECTED / ASSIGNED
+   │
+   ├─ Nộp & sửa đề cương
+   │  ├─ Upload đề cương (OUTLINE_SUBMITTED)
+   │  ├─ Xem trạng thái duyệt + nhận xét
+   │  └─ Nộp lại khi OUTLINE_REJECTED
+   │
+   ├─ Cập nhật tiến độ đồ án
+   │  ├─ Tạo bản ghi tiến độ (mô tả, file đính kèm)
+   │  ├─ Xem lịch sử tiến độ + nhận xét GV
+   │  └─ Thông tin trạng thái tổng: IN_PROGRESS
+   │
+   ├─ Đăng ký bảo vệ
+   │  ├─ Upload:
+   │  │  ├─ Báo cáo cuối
+   │  │  ├─ Source code
+   │  │  └─ Slide
+   │  ├─ Nút "Gửi đăng ký bảo vệ" → DEFENSE_REQUESTED
+   │  └─ Xem kết quả duyệt: DEFENSE_APPROVED / DEFENSE_REJECTED + lý do
+   │
+   └─ Thông báo & lịch sử
+      ├─ Danh sách thông báo (đề tài được duyệt, đề cương bị từ chối, nhắc deadline…)
+      └─ Lọc theo loại (đề tài / đề cương / tiến độ / bảo vệ)

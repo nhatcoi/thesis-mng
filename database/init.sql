@@ -607,8 +607,8 @@ INSERT INTO users (username, email, full_name, role, status) VALUES
 ('truongnganh', 'truongnganh@phenikaa.edu.vn',  'Trưởng ngành KTPM',   'DEPT_HEAD',    'ACTIVE'),
 ('gv_nhat',     'nhat.gv@phenikaa.edu.vn',      'Nguyễn Văn Nhật GV',  'LECTURER',     'ACTIVE'),
 ('gv_viet',     'viet.gv@phenikaa.edu.vn',      'Nghiêm Đức Việt GV',  'LECTURER',     'ACTIVE'),
-('sv001',       'sv001@st.phenikaa.edu.vn',     'Sinh viên Nguyễn A',  'STUDENT',      'ACTIVE'),
-('sv002',       'sv002@st.phenikaa.edu.vn',     'Sinh viên Trần B',    'STUDENT',      'ACTIVE');
+('23010887',       '23010887@st.phenikaa.edu.vn',     'Sinh viên Nguyễn A',  'STUDENT',      'ACTIVE'),
+('23010888',       '23010887@st.phenikaa.edu.vn',     'Sinh viên Trần B',    'STUDENT',      'ACTIVE');
 
 INSERT INTO lecturers (user_id, lecturer_code, faculty_id, academic_rank, academic_degree, research_areas) VALUES
 ((SELECT id FROM users WHERE username = 'gv_nhat'),  'GV001', (SELECT id FROM faculties WHERE code = 'CNTT'), 'Giảng viên', 'Thạc sĩ', 'Web, Software Engineering'),

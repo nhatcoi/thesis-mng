@@ -140,7 +140,7 @@ class ThesisBatchControllerIntegrationTest {
 
     @Test
     @DisplayName("GET /api/batches/{id} - chi tiết đợt đồ án")
-    @WithMockUser
+    @WithMockUser(roles = "TRAINING_DEPT")
     void getById_returns200() throws Exception {
         UUID id = createBatchAndGetId();
         mvc.perform(get("/api/batches/{id}", id))
