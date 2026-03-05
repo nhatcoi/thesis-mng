@@ -9,4 +9,6 @@ import java.util.UUID;
 @Repository
 public interface MajorRepository extends JpaRepository<Major, UUID> {
     List<Major> findByFacultyId(UUID facultyId);
+
+    java.util.Optional<Major> findByCode(String code);
 }

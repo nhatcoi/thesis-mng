@@ -9,6 +9,11 @@ spring:
   application:
     name: thesis-management
 
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
   # ---- DataSource ----
   datasource:
     url: jdbc:postgresql://localhost:5432/thesis_management
