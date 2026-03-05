@@ -1,22 +1,30 @@
 package com.phenikaa.thesis.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.convert.converter.Converter;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.AuthenticationManagerResolver;
+import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.core.DefaultOAuth2AuthenticatedPrincipal;
+import org.springframework.security.oauth2.core.OAuth2AuthenticatedPrincipal;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.JwtDecoders;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationProvider;
+import org.springframework.security.oauth2.server.resource.authentication.OpaqueTokenAuthenticationProvider;
+import org.springframework.security.oauth2.server.resource.introspection.NimbusOpaqueTokenIntrospector;
+import org.springframework.security.oauth2.server.resource.introspection.OpaqueTokenIntrospector;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfigurationSource;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import jakarta.servlet.http.HttpServletRequest;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Configuration
@@ -24,7 +32,18 @@ import java.util.stream.Collectors;
 @EnableMethodSecurity
 public class SecurityConfig {
 
+    static final String ROLES_CLAIM = "urn:zitadel:iam:org:project:roles";
+
     private final CorsConfigurationSource corsConfigurationSource;
+
+    @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}")
+    private String issuerUri;
+
+    @Value("${zitadel.introspection.client-id}")
+    private String introspectionClientId;
+
+    @Value("${zitadel.introspection.client-secret}")
+    private String introspectionClientSecret;
 
     public SecurityConfig(CorsConfigurationSource corsConfigurationSource) {
         this.corsConfigurationSource = corsConfigurationSource;
@@ -47,41 +66,67 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(PUBLIC_PATHS).permitAll()
                         .anyRequest().authenticated())
-                .oauth2Login(oauth2 -> oauth2
-                        .defaultSuccessUrl("/api/auth/me", true))
                 .oauth2ResourceServer(oauth2 -> oauth2
-                        .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())));
-
+                        .authenticationManagerResolver(tokenAuthManagerResolver()));
         return http.build();
     }
 
+    /**
+     * Supports both JWT and opaque tokens:
+     * - Token has dots (xxx.yyy.zzz) → validate as JWT locally via JWKS
+     * - Token is opaque → validate via Zitadel introspection endpoint
+     */
     @Bean
-    public JwtAuthenticationConverter jwtAuthenticationConverter() {
-        JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
-        converter.setJwtGrantedAuthoritiesConverter(new ZitadelRoleConverter());
-        return converter;
+    public AuthenticationManagerResolver<HttpServletRequest> tokenAuthManagerResolver() {
+        AuthenticationManager jwtAuth = jwtAuthManager();
+        AuthenticationManager opaqueAuth = opaqueAuthManager();
+
+        return request -> {
+            String header = request.getHeader("Authorization");
+            if (header != null && header.startsWith("Bearer ")) {
+                String token = header.substring(7);
+                long dotCount = token.chars().filter(c -> c == '.').count();
+                if (dotCount == 2) {
+                    return jwtAuth;
+                }
+            }
+            return opaqueAuth;
+        };
     }
 
-    /**
-     * Extracts roles from Zitadel JWT claims.
-     * Zitadel puts project roles under: urn:zitadel:iam:org:project:roles
-     * Format: { "role_name": { "org_id": "org_domain" }, ... }
-     */
-    static class ZitadelRoleConverter implements Converter<Jwt, Collection<GrantedAuthority>> {
+    private AuthenticationManager jwtAuthManager() {
+        JwtDecoder decoder = JwtDecoders.fromIssuerLocation(issuerUri);
+        JwtAuthenticationProvider provider = new JwtAuthenticationProvider(decoder);
 
-        private static final String ROLES_CLAIM = "urn:zitadel:iam:org:project:roles";
+        JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
+        converter.setJwtGrantedAuthoritiesConverter(jwt -> extractAuthorities(jwt.getClaimAsMap(ROLES_CLAIM)));
+        provider.setJwtAuthenticationConverter(converter);
 
-        @Override
-        @SuppressWarnings("unchecked")
-        public Collection<GrantedAuthority> convert(Jwt jwt) {
-            Map<String, Object> roles = jwt.getClaimAsMap(ROLES_CLAIM);
-            if (roles == null || roles.isEmpty()) {
-                return Collections.emptyList();
-            }
+        return new ProviderManager(provider);
+    }
 
-            return roles.keySet().stream()
-                    .map(role -> new SimpleGrantedAuthority("ROLE_" + role.toUpperCase()))
-                    .collect(Collectors.toList());
+    private AuthenticationManager opaqueAuthManager() {
+        String introspectUri = issuerUri + "/oauth/v2/introspect";
+        NimbusOpaqueTokenIntrospector delegate = new NimbusOpaqueTokenIntrospector(
+                introspectUri, introspectionClientId, introspectionClientSecret);
+
+        OpaqueTokenIntrospector withRoles = token -> {
+            OAuth2AuthenticatedPrincipal p = delegate.introspect(token);
+            Collection<GrantedAuthority> authorities = extractAuthorities(p.getAttribute(ROLES_CLAIM));
+            return new DefaultOAuth2AuthenticatedPrincipal(
+                    p.getName(), p.getAttributes(), authorities);
+        };
+
+        return new ProviderManager(new OpaqueTokenAuthenticationProvider(withRoles));
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Collection<GrantedAuthority> extractAuthorities(Object rolesObj) {
+        if (!(rolesObj instanceof Map<?, ?> roles) || roles.isEmpty()) {
+            return Collections.emptyList();
         }
+        return roles.keySet().stream()
+                .map(k -> new SimpleGrantedAuthority("ROLE_" + k.toString().toUpperCase()))
+                .collect(Collectors.toList());
     }
 }

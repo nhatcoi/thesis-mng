@@ -38,24 +38,18 @@ spring:
     change-log: classpath:db/changelog/db.changelog-master.yaml
     enabled: true
 
-  # ---- Security / OAuth2 (Zitadel SSO) ----
+  # ---- Security / OAuth2 Resource Server (Zitadel SSO) ----
   security:
     oauth2:
-      client:
-        registration:
-          zitadel:
-            client-id: 362704457538011138@thesis_management_system
-            client-secret: agPaB6vl8QpA8xSl28blUpBI0RV5AbCeL7hFsoavbC0xPT8gsqhWoxyzAA4nkY0U
-            scope: openid,profile,email
-            authorization-grant-type: authorization_code
-            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
-        provider:
-          zitadel:
-            issuer-uri: http://localhost:18080
-            user-name-attribute: preferred_username
       resourceserver:
         jwt:
           issuer-uri: http://localhost:18080
+
+# Zitadel introspection (for opaque tokens - uses a confidential client)
+zitadel:
+  introspection:
+    client-id: 362704457538011138@thesis_management_system
+    client-secret: agPaB6vl8QpA8xSl28blUpBI0RV5AbCeL7hFsoavbC0xPT8gsqhWoxyzAA4nkY0U
 
   # ---- Jackson ----
   jackson:
