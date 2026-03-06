@@ -22,6 +22,47 @@ export interface Topic {
     createdAt: string;
 }
 
+export interface TopicStudentInfo {
+    studentId: string;
+    studentName: string;
+    studentCode: string;
+    majorCode?: string;
+    majorName?: string;
+    registrationStatus?: string;
+    registeredAt?: string;
+    thesisStatus?: string;
+}
+
+export interface TopicDetail {
+    id: string;
+    title: string;
+    description: string;
+    requirements: string;
+    source: string;
+    status: string;
+    rejectReason?: string;
+    createdAt: string;
+    // Phạm vi
+    majorCode?: string;
+    majorName?: string;
+    facultyName?: string;
+    batchId: string;
+    batchName: string;
+    maxStudents: number;
+    currentStudents: number;
+    availableSlots: number;
+    // Giảng viên
+    lecturerId: string;
+    lecturerName: string;
+    lecturerCode?: string;
+    lecturerEmail?: string;
+    lecturerPhone?: string;
+    lecturerFacultyName?: string;
+    // Danh sách SV
+    registeredStudents: TopicStudentInfo[];
+    assignedStudents: TopicStudentInfo[];
+}
+
 export interface TopicRequest {
     title: string;
     description: string;
@@ -53,6 +94,22 @@ export class TopicService {
         if (params.majorCode) httpParams = httpParams.set('majorCode', params.majorCode);
 
         return this.http.get<any>(`${this.baseUrl}/me`, { params: httpParams });
+    }
+
+    getAvailableTopics(params: { batchId?: string; majorCode?: string; search?: string } = {}): Observable<{ data: Topic[] }> {
+        let httpParams = new HttpParams();
+        if (params.batchId) httpParams = httpParams.set('batchId', params.batchId);
+        if (params.majorCode) httpParams = httpParams.set('majorCode', params.majorCode);
+        if (params.search) httpParams = httpParams.set('search', params.search);
+        return this.http.get<any>(`${this.baseUrl}/available`, { params: httpParams });
+    }
+
+    getTopicById(id: string): Observable<{ data: Topic }> {
+        return this.http.get<any>(`${this.baseUrl}/${id}`);
+    }
+
+    getTopicDetail(id: string): Observable<{ data: TopicDetail }> {
+        return this.http.get<any>(`${this.baseUrl}/${id}/detail`);
     }
 
     createTopic(topic: TopicRequest): Observable<{ data: Topic }> {

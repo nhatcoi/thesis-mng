@@ -13,189 +13,124 @@ type ImportType = 'STUDENT' | 'LECTURER';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, FormsModule, MatIconModule],
   template: `
-    <div class="space-y-6">
-      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <div class="space-y-4">
+      <!-- Header -->
+      <div class="app-section-header flex flex-col md:flex-row justify-between items-center gap-4">
         <div>
-          <h2 class="text-2xl font-bold text-gray-900">Quản lý Người dùng</h2>
-          <p class="mt-1 text-sm text-gray-500">Quản lý tài khoản người dùng, import dữ liệu và phân quyền hệ thống.</p>
+          <h2 class="app-title">Quản lý Người dùng</h2>
+          <p class="app-subtitle">Quản lý tài khoản, import dữ liệu và phân quyền hệ thống.</p>
         </div>
-        <div class="flex space-x-3">
-          <button (click)="openModal()"
-            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 transition-all">
-            <mat-icon class="mr-2 !text-[20px]">person_add</mat-icon>
-            Thêm thủ công
-          </button>
-        </div>
+        <button (click)="openModal()" class="app-btn-primary">
+          <mat-icon class="mr-1.5 !text-base">person_add</mat-icon> Thêm thủ công
+        </button>
       </div>
 
-      <!-- Tabs -->
-      <div class="border-b border-gray-200">
-        <nav class="-mb-px flex space-x-8">
-          <button (click)="activeTab.set('list')"
-            [class]="activeTab() === 'list' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
-            class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center">
-            <mat-icon class="mr-2 !text-[20px]">list</mat-icon>
-            Danh sách người dùng
-          </button>
-          <button (click)="activeTab.set('import')"
-            [class]="activeTab() === 'import' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
-            class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center">
-            <mat-icon class="mr-2 !text-[20px]">cloud_upload</mat-icon>
-            Import dữ liệu hệ thống
-          </button>
-        </nav>
+      <!-- Tabs Navigation -->
+      <div class="app-tabs">
+        <button (click)="activeTab.set('list')" [class.active]="activeTab() === 'list'" class="app-tab-btn">
+          <mat-icon class="mr-1.5 !text-base">list</mat-icon> Danh sách người dùng
+        </button>
+        <button (click)="activeTab.set('import')" [class.active]="activeTab() === 'import'" class="app-tab-btn">
+          <mat-icon class="mr-1.5 !text-base">cloud_upload</mat-icon> Import dữ liệu
+        </button>
       </div>
 
       <!-- TAB: LIST -->
       @if (activeTab() === 'list') {
-        <div class="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+        <div class="space-y-4 animate-in fade-in duration-300">
           <!-- Filters & Search -->
-          <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col gap-4">
-            <div class="flex flex-col md:flex-row gap-4 items-center">
-              <div class="relative flex-1 w-full">
-                <span class="absolute inset-y-0 left-0 pl-3 flex items-center pt-1">
-                  <mat-icon class="text-gray-400">search</mat-icon>
-                </span>
-                <input type="text" [(ngModel)]="searchQuery" (ngModelChange)="onSearchChange($event)"
-                  placeholder="Tìm theo tên, email, tên đăng nhập..."
-                  class="block w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-xl leading-5 bg-gray-50/50 placeholder-gray-400 focus:outline-none focus:bg-white focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm border transition-all">
-              </div>
+          <div class="app-card p-4 space-y-4 bg-gray-50/20 shadow-none border-gray-100">
+            <div class="relative w-full">
+              <mat-icon class="absolute left-3 top-1/2 -translate-y-1/2 !text-base text-gray-400">search</mat-icon>
+              <input type="text" [(ngModel)]="searchQuery" (ngModelChange)="onSearchChange($event)"
+                placeholder="Tìm theo tên, email, mã định danh..." class="app-input pl-9" />
             </div>
 
-            <div class="flex flex-wrap gap-4 items-center border-t border-gray-100 pt-4">
-               <div class="w-full md:w-48">
-                  <label class="text-[10px] font-bold text-gray-400 uppercase tracking-tighter mb-1 block ml-1">Lọc theo Vai trò</label>
-                  <select [(ngModel)]="roleFilter" (change)="refresh()"
-                    class="block w-full px-3 py-2 border border-gray-200 bg-gray-50/50 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm border transition-all">
-                    <option value="">Tất cả vai trò</option>
-                    <option value="STUDENT">Sinh viên</option>
-                    <option value="LECTURER">Giảng viên</option>
-                    <option value="DEPT_HEAD">Trưởng ngành</option>
-                    <option value="TRAINING_DEPT">Phòng Đào tạo</option>
-                    <option value="ADMIN">Quản trị viên</option>
-                  </select>
-               </div>
-               <div class="w-full md:w-64">
-                  <label class="text-[10px] font-bold text-gray-400 uppercase tracking-tighter mb-1 block ml-1">Lọc theo Khoa</label>
-                  <select [(ngModel)]="facultyFilter" (change)="onFacultyChange()"
-                    class="block w-full px-3 py-2 border border-gray-200 bg-gray-50/50 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm border transition-all">
-                    <option [value]="''">Tất cả Khoa</option>
-                    @for (f of faculties(); track f.id) {
-                      <option [value]="f.id">{{ f.name }}</option>
-                    }
-                  </select>
-               </div>
-               <div class="w-full md:w-64">
-                  <label class="text-[10px] font-bold text-gray-400 uppercase tracking-tighter mb-1 block ml-1">Lọc theo Ngành</label>
-                  <select [(ngModel)]="majorFilter" (change)="refresh()"
-                    class="block w-full px-3 py-2 border border-gray-200 bg-gray-50/50 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm border transition-all">
-                    <option [value]="''">Tất cả Ngành</option>
-                    @for (m of filteredMajors(); track m.id) {
-                      <option [value]="m.id">{{ m.name }}</option>
-                    }
-                  </select>
-               </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <select [(ngModel)]="roleFilter" (change)="refresh()" class="app-select">
+                <option value="">Tất cả vai trò</option>
+                <option value="STUDENT">Sinh viên</option>
+                <option value="LECTURER">Giảng viên</option>
+                <option value="DEPT_HEAD">Trưởng ngành</option>
+                <option value="TRAINING_DEPT">Phòng Đào tạo</option>
+                <option value="ADMIN">Quản trị viên</option>
+              </select>
+
+              <select [(ngModel)]="facultyFilter" (change)="onFacultyChange()" class="app-select">
+                <option value="">Tất cả Khoa</option>
+                @for (f of faculties(); track f.id) {
+                  <option [value]="f.id">{{ f.name }}</option>
+                }
+              </select>
+
+              <select [(ngModel)]="majorFilter" (change)="refresh()" class="app-select">
+                <option value="">Tất cả Ngành</option>
+                @for (m of filteredMajors(); track m.id) {
+                  <option [value]="m.id">{{ m.name }}</option>
+                }
+              </select>
             </div>
           </div>
 
           <!-- User Table -->
-          <div class="bg-white shadow-sm border border-gray-200 rounded-xl overflow-hidden">
+          <div class="app-card">
             <div class="overflow-x-auto">
-              <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
+              <table class="w-full text-left border-collapse">
+                <thead class="bg-gray-50/50 border-b border-gray-100 italic">
                   <tr>
-                    <th (click)="toggleSort('username')" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors">
-                       <div class="flex items-center gap-1">
-                          Mã định danh
-                          <mat-icon class="!text-[14px] !w-auto !h-auto text-gray-400" *ngIf="sortBy() === 'username'">{{ sortDir() === 'asc' ? 'arrow_upward' : 'arrow_downward' }}</mat-icon>
-                       </div>
+                    <th (click)="toggleSort('username')" class="p-3 text-[11px] font-bold text-gray-500 uppercase tracking-wider cursor-pointer hover:text-indigo-600 transition-colors">
+                      Mã định danh
                     </th>
-                    <th (click)="toggleSort('lastName')" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors">
-                       <div class="flex items-center gap-1">
-                          Họ
-                          <mat-icon class="!text-[14px] !w-auto !h-auto text-gray-400" *ngIf="sortBy() === 'lastName'">{{ sortDir() === 'asc' ? 'arrow_upward' : 'arrow_downward' }}</mat-icon>
-                       </div>
-                    </th>
-                    <th (click)="toggleSort('firstName')" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors">
-                       <div class="flex items-center gap-1">
-                          Tên
-                          <mat-icon class="!text-[14px] !w-auto !h-auto text-gray-400" *ngIf="sortBy() === 'firstName'">{{ sortDir() === 'asc' ? 'arrow_upward' : 'arrow_downward' }}</mat-icon>
-                       </div>
-                    </th>
-                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Ngành / Khoa trực thuộc</th>
-                    <th (click)="toggleSort('email')" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors">
-                       <div class="flex items-center gap-1">
-                          Email
-                          <mat-icon class="!text-[14px] !w-auto !h-auto text-gray-400" *ngIf="sortBy() === 'email'">{{ sortDir() === 'asc' ? 'arrow_upward' : 'arrow_downward' }}</mat-icon>
-                       </div>
-                    </th>
-                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Vai trò</th>
-                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Trạng thái</th>
+                    <th class="p-3 text-[11px] font-bold text-gray-500 uppercase tracking-wider">Họ và Tên</th>
+                    <th class="p-3 text-[11px] font-bold text-gray-500 uppercase tracking-wider">Trực thuộc</th>
+                    <th class="p-3 text-[11px] font-bold text-gray-500 uppercase tracking-wider">Vai trò</th>
+                    <th class="p-3 text-[11px] font-bold text-gray-500 uppercase tracking-wider">Trạng thái</th>
                   </tr>
                 </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
+                <tbody class="divide-y divide-gray-100 text-xs">
                   @for (user of users(); track user.id) {
-                    <tr class="hover:bg-gray-50 transition-colors">
-                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-bold font-mono">
-                        {{ user.username }}
+                    <tr class="hover:bg-gray-50/50 transition-colors">
+                      <td class="p-3 font-mono font-bold text-gray-700">{{ user.username }}</td>
+                      <td class="p-3">
+                        <div class="font-bold text-gray-900">{{ user.lastName }} {{ user.firstName }}</div>
+                        <div class="text-[10px] text-gray-400 font-medium">{{ user.email }}</div>
                       </td>
-                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                        {{ user.lastName }}
-                      </td>
-                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
-                        {{ user.firstName }}
-                      </td>
-                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td class="p-3">
                         @if (hasRole(user, 'STUDENT')) {
-                          <div class="flex flex-col">
-                            <span class="font-medium text-indigo-700 underline decoration-indigo-200 underline-offset-4">{{ user.majorName || 'Chưa cập nhật ngành' }}</span>
-                            <span class="text-[10px] text-gray-400 uppercase tracking-tighter" *ngIf="user.facultyName">{{ user.facultyName }}</span>
-                          </div>
+                          <div class="font-bold text-indigo-700">{{ user.majorName || 'Chưa cập nhật' }}</div>
+                          <div class="text-[10px] text-gray-400">{{ user.facultyName }}</div>
                         } @else if (hasRole(user, 'LECTURER') || hasRole(user, 'DEPT_HEAD')) {
-                           <div class="flex flex-col">
-                              <span class="font-medium text-indigo-700">{{ user.facultyName || 'Chưa cập nhật khoa' }}</span>
-                              @if (hasRole(user, 'DEPT_HEAD') && user.managedMajorName) {
-                                <span class="text-[10px] text-indigo-500 font-bold uppercase tracking-tighter">Trưởng ngành: {{ user.managedMajorName }}</span>
-                              } @else if (hasRole(user, 'DEPT_HEAD')) {
-                                <span class="text-[10px] text-red-400 italic">Chưa gán ngành quản lý</span>
-                              }
-                           </div>
+                          <div class="font-bold text-indigo-700">{{ user.facultyName || 'Chưa cập nhật' }}</div>
+                          @if (hasRole(user, 'DEPT_HEAD')) {
+                            <div class="text-[10px] text-indigo-500 font-bold">Trưởng ngành: {{ user.managedMajorName || 'Trống' }}</div>
+                          }
                         } @else {
-                          <span class="text-gray-300">-</span>
+                          <span class="text-gray-300 italic">N/A</span>
                         }
                       </td>
-                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ user.email }}</td>
-                      <td class="px-6 py-4 whitespace-nowrap">
+                      <td class="p-3">
                         <div class="flex flex-wrap gap-1">
                           @for (role of (user.roles || []); track role) {
-                            <span [class]="getRoleBadgeClass(role)" class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider">
+                            <span [class]="getRoleBadgeClass(role)" class="app-badge">
                               {{ getRoleLabel(role) }}
                             </span>
                           }
                         </div>
                       </td>
-                      <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          <span class="w-1.5 h-1.5 rounded-full bg-green-500 mr-1.5"></span>
+                      <td class="p-3">
+                        <span class="app-badge border-green-100 bg-green-50 text-green-700 whitespace-nowrap">
+                          <span class="w-1 h-1 rounded-full bg-green-500 mr-1.5 shadow-sm"></span>
                           {{ user.status }}
                         </span>
                       </td>
                     </tr>
                   } @empty {
                     @if (loading()) {
-                      <tr>
-                        <td colspan="5" class="px-6 py-10 text-center">
-                          <div class="flex justify-center items-center">
-                            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-                          </div>
-                        </td>
-                      </tr>
+                      <tr><td colspan="5" class="p-10 text-center text-xs">
+                        <div class="flex justify-center"><div class="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div></div>
+                      </td></tr>
                     } @else {
-                      <tr>
-                        <td colspan="5" class="px-6 py-10 text-center text-sm text-gray-500 font-medium font-mono">
-                           NO_DATA_FOUND
-                        </td>
-                      </tr>
+                      <tr><td colspan="5" class="p-10 text-center text-[11px] text-gray-400 italic">KHÔNG TÌM THẤY DỮ LIỆU</td></tr>
                     }
                   }
                 </tbody>
@@ -204,29 +139,11 @@ type ImportType = 'STUDENT' | 'LECTURER';
 
             <!-- Pagination -->
             @if (totalPages() > 1) {
-              <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
-                <div class="text-sm text-gray-700">
-                  Hiển thị {{ page() * size() + 1 }} - {{ Math.min((page() + 1) * size(), totalElements()) }} 
-                  trong tổng số {{ totalElements() }} kết quả
-                </div>
-                <div class="flex space-x-2">
-                  <button (click)="changePage(page() - 1)" [disabled]="page() === 0"
-                    class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm font-medium bg-white hover:bg-gray-50 disabled:opacity-50 transition-all">
-                    Trước
-                  </button>
-                  @for (p of [].constructor(totalPages()); track $index) {
-                    @if ($index >= page() - 2 && $index <= page() + 2) {
-                      <button (click)="changePage($index)"
-                        [class]="page() === $index ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'"
-                        class="px-3 py-1.5 border rounded-lg text-sm font-medium transition-all">
-                        {{ $index + 1 }}
-                      </button>
-                    }
-                  }
-                  <button (click)="changePage(page() + 1)" [disabled]="page() === totalPages() - 1"
-                    class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm font-medium bg-white hover:bg-gray-50 disabled:opacity-50 transition-all">
-                    Sau
-                  </button>
+              <div class="p-3 border-t border-gray-100 bg-gray-50/30 flex items-center justify-between text-[11px] text-gray-500 font-medium">
+                <div>Hiển thị <b>{{ page() * size() + 1 }}</b> - <b>{{ Math.min((page() + 1) * size(), totalElements()) }}</b> (Tổng <b>{{ totalElements() }}</b>)</div>
+                <div class="flex gap-1">
+                  <button (click)="changePage(page() - 1)" [disabled]="page() === 0" class="app-btn-secondary !px-2 !py-1 disabled:opacity-30">Trước</button>
+                  <button (click)="changePage(page() + 1)" [disabled]="page() === totalPages() - 1" class="app-btn-secondary !px-2 !py-1 disabled:opacity-30">Sau</button>
                 </div>
               </div>
             }
@@ -236,144 +153,102 @@ type ImportType = 'STUDENT' | 'LECTURER';
 
       <!-- TAB: IMPORT -->
       @if (activeTab() === 'import') {
-        <div class="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300 max-w-4xl mx-auto">
-          <div class="bg-indigo-50 p-4 rounded-xl border border-indigo-100 flex items-start">
-            <mat-icon class="text-indigo-600 mr-3 mt-0.5">info</mat-icon>
-            <div class="text-sm text-indigo-700">
-              Sử dụng chức năng này để thêm đồng thời nhiều người dùng từ file CSV. Vui lòng tải file mẫu để đảm bảo dữ liệu đúng định dạng.
-            </div>
+        <div class="animate-in fade-in duration-300 max-w-2xl mx-auto space-y-4 pt-4 font-mono italic">
+          <div class="p-3 bg-indigo-50/50 rounded-lg border border-indigo-100 text-xs text-indigo-700 leading-relaxed">
+            Sử dụng chức năng này để thêm đồng thời nhiều người dùng từ file CSV. Hãy tải file mẫu để đảm bảo dữ liệu đúng định dạng.
           </div>
 
           <!-- Type Selection -->
-          <div class="flex space-x-3">
+          <div class="flex gap-2">
             <button (click)="setImportType('STUDENT')" 
-              [class]="importType() === 'STUDENT' ? 'bg-indigo-600 text-white shadow-md' : 'bg-white text-gray-700 border border-gray-200'"
-              class="flex items-center px-4 py-2.5 rounded-xl text-sm font-bold transition-all">
-              <mat-icon class="mr-2 !text-[20px]">school</mat-icon>
-              Import Sinh viên
+              [class]="importType() === 'STUDENT' ? 'app-btn-primary' : 'app-btn-secondary'" class="flex-grow">
+              <mat-icon class="mr-1.5 !text-base">school</mat-icon> Import Sinh viên
             </button>
             <button (click)="setImportType('LECTURER')" 
-              [class]="importType() === 'LECTURER' ? 'bg-indigo-600 text-white shadow-md' : 'bg-white text-gray-700 border border-gray-200'"
-              class="flex items-center px-4 py-2.5 rounded-xl text-sm font-bold transition-all">
-              <mat-icon class="mr-2 !text-[20px]">person</mat-icon>
-              Import Giảng viên
+              [class]="importType() === 'LECTURER' ? 'app-btn-primary' : 'app-btn-secondary'" class="flex-grow">
+              <mat-icon class="mr-1.5 !text-base">person</mat-icon> Import Giảng viên
             </button>
           </div>
 
           <!-- Upload Area -->
-          <div class="bg-white p-8 border-2 border-dashed border-gray-200 rounded-2xl flex flex-col items-center justify-center transition-all hover:border-indigo-300 group"
-               (dragover)="$event.preventDefault()" (drop)="onDropImport($event)">
-              <div class="bg-indigo-50 p-4 rounded-full mb-4 group-hover:scale-110 transition-transform">
-                <mat-icon class="text-indigo-600 !text-[32px] w-auto h-auto">cloud_upload</mat-icon>
+          <div class="bg-white p-10 border-2 border-dashed border-gray-100 rounded-xl flex flex-col items-center justify-center transition-all hover:bg-gray-50/30 group cursor-pointer"
+               (dragover)="$event.preventDefault()" (drop)="onDropImport($event)" (click)="fileInput.click()">
+              <div class="w-12 h-12 bg-indigo-50 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <mat-icon class="text-indigo-600 !text-2xl">cloud_upload</mat-icon>
               </div>
-              <h4 class="text-lg font-bold text-gray-900 mb-1">Tải file danh sách lên</h4>
-              <p class="text-sm text-gray-500 mb-6">Kéo thả file .csv vào đây hoặc <span class="text-indigo-600 font-bold cursor-pointer" (click)="fileInput.click()">duyệt file</span></p>
+              <h4 class="text-sm font-bold text-gray-900 mb-1">Chọn hoặc Kéo thả file .csv</h4>
+              <p class="text-xs text-gray-500">Định dạng hỗ trợ duy nhất: CSV Unicode (UTF-8)</p>
               <input #fileInput type="file" class="hidden" (change)="onFileSelectedImport($event)" accept=".csv"/>
 
               @if (selectedImportFile()) {
-                <div class="w-full max-w-md bg-gray-50 p-4 rounded-xl border border-gray-200 flex items-center justify-between animate-in zoom-in-95">
-                  <div class="flex items-center truncate">
-                    <mat-icon class="text-indigo-500 mr-2">insert_drive_file</mat-icon>
-                    <span class="text-sm font-bold text-gray-700 truncate">{{ selectedImportFile()?.name }}</span>
-                  </div>
-                  <button (click)="selectedImportFile.set(null)" class="text-gray-400 hover:text-red-500">
-                    <mat-icon class="!text-[20px]">cancel</mat-icon>
+                <div class="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold flex items-center gap-2 animate-in zoom-in-95">
+                  <mat-icon class="!text-lg">insert_drive_file</mat-icon>
+                  <span class="truncate max-w-[200px]">{{ selectedImportFile()?.name }}</span>
+                  <button (click)="$event.stopPropagation(); selectedImportFile.set(null)" class="hover:text-amber-300 ml-1">
+                    <mat-icon class="!text-lg">close</mat-icon>
                   </button>
                 </div>
               }
           </div>
 
-          <div class="flex items-center justify-between">
+          <div class="flex items-center justify-between pt-2">
             <a [href]="importType() === 'STUDENT' ? '/assets/samples/pdt_import_students.csv' : '/assets/samples/pdt_import_lecturers.csv'" 
-               download class="inline-flex items-center text-sm font-bold text-indigo-600 hover:text-indigo-700">
-               <mat-icon class="mr-1.5 !text-[20px]">download</mat-icon>
-               Tải file mẫu (CSV)
+               download class="text-xs font-bold text-indigo-600 hover:underline flex items-center">
+               <mat-icon class="mr-1 !text-base">download</mat-icon> Tải file mẫu CSV
             </a>
             <button (click)="uploadImport()" [disabled]="!selectedImportFile() || uploadingImport()"
-              class="px-8 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition-all shadow-lg shadow-indigo-200 disabled:opacity-50">
-              {{ uploadingImport() ? 'Đang xử lý...' : 'Bắt đầu Import' }}
+              class="app-btn-primary !px-6 disabled:opacity-50">
+              {{ uploadingImport() ? 'Đang thực hiện...' : 'Bắt đầu Import' }}
             </button>
           </div>
 
           <!-- Import Results -->
           @if (importResult(); as res) {
-            <div class="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm animate-in slide-in-from-top-4 duration-500">
-              <div class="px-6 py-4 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
-                <h3 class="font-bold text-gray-900">Chi tiết kết quả Import</h3>
-                <span class="text-xs text-gray-500 font-mono">FINISH_AT: {{ lastImportAt | date:'HH:mm:ss dd/MM' }}</span>
+            <div class="app-card overflow-hidden animate-in slide-in-from-top-4 duration-500">
+              <div class="px-4 py-2 bg-gray-50 border-b border-gray-100 flex justify-between items-center">
+                <h3 class="text-xs font-bold text-gray-700">Kết quả: {{ lastImportAt | date:'HH:mm:ss' }}</h3>
+                <div class="flex gap-3 text-[10px] font-black italic">
+                  <span class="text-green-600">✓ {{ res.successCount }}</span>
+                  <span class="text-red-500">✗ {{ res.failureCount }}</span>
+                </div>
               </div>
-              <div class="p-6">
-                 <div class="grid grid-cols-2 gap-4 mb-6">
-                    <div class="p-4 bg-green-50 border border-green-100 rounded-xl">
-                       <p class="text-xs font-bold text-green-600 uppercase mb-1">Thành công</p>
-                       <p class="text-3xl font-black text-green-700">{{ res.successCount }}</p>
+              @if (res.errors.length > 0) {
+                <div class="max-h-60 overflow-y-auto text-[10px] p-2 text-red-600/80 italic font-medium leading-tight divide-y divide-gray-50">
+                  @for (err of res.errors; track err.rowNumber) {
+                    <div class="py-1.5 flex gap-2">
+                      <span class="w-8 shrink-0">Row {{ err.rowNumber }}</span>
+                      <span><b class="text-gray-600 mr-1">{{ err.identifier }}:</b> {{ err.message }}</span>
                     </div>
-                    <div class="p-4 bg-red-50 border border-red-100 rounded-xl">
-                       <p class="text-xs font-bold text-red-600 uppercase mb-1">Thất bại</p>
-                       <p class="text-3xl font-black text-red-700">{{ res.failureCount }}</p>
-                    </div>
-                 </div>
-
-                 @if (res.errors.length > 0) {
-                    <div class="max-h-80 overflow-y-auto border border-gray-200 rounded-xl">
-                       <table class="min-w-full divide-y divide-gray-200">
-                          <thead class="bg-gray-50 sticky top-0">
-                             <tr>
-                                <th class="px-4 py-2 text-left text-xs font-bold text-gray-500 uppercase">Dòng</th>
-                                <th class="px-4 py-2 text-left text-xs font-bold text-gray-500 uppercase">Lỗi</th>
-                             </tr>
-                          </thead>
-                          <tbody class="divide-y divide-gray-200 bg-white">
-                             @for (err of res.errors; track err.rowNumber) {
-                                <tr class="text-xs">
-                                   <td class="px-4 py-2 font-mono text-gray-400">{{ err.rowNumber }}</td>
-                                   <td class="px-4 py-2 text-red-600 font-medium">
-                                      <span class="font-bold text-gray-700 mr-2">{{ err.identifier }}:</span>
-                                      {{ err.message }}
-                                   </td>
-                                </tr>
-                             }
-                          </tbody>
-                       </table>
-                    </div>
-                 }
-              </div>
+                  }
+                </div>
+              }
             </div>
           }
         </div>
       }
     </div>
 
-    <!-- Modal Manual Add (Keep as before but clean) -->
+    <!-- Modal Manual Add -->
     @if (showModal()) {
-      <div class="fixed inset-0 bg-gray-500/75 flex items-center justify-center z-50 animate-in fade-in duration-200">
-        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full mx-4 overflow-hidden border border-gray-100">
-          <div class="px-8 py-5 bg-gradient-to-r from-indigo-600 to-violet-700 flex justify-between items-center">
-            <h3 class="text-lg font-bold text-white flex items-center">
-              <mat-icon class="mr-2">person_add</mat-icon>
+      <div class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-lg shadow-2xl max-w-xl w-full flex flex-col max-h-[90vh] border border-gray-100 animate-in zoom-in-95 duration-200">
+          <div class="px-6 py-4 bg-gray-50/50 border-b border-gray-100 flex justify-between items-center italic">
+            <h3 class="text-sm font-bold text-gray-900 flex items-center gap-2">
+              <mat-icon class="text-indigo-600">person_add</mat-icon>
               Thêm người dùng thủ công
             </h3>
-            <button (click)="closeModal()" class="text-white/80 hover:text-white transition-colors">
-              <mat-icon>close</mat-icon>
-            </button>
+            <button (click)="closeModal()" class="text-gray-400 hover:text-gray-600"><mat-icon>close</mat-icon></button>
           </div>
           
-          <form [formGroup]="form" (ngSubmit)="save()" class="p-8 max-h-[80vh] overflow-y-auto">
-            <div class="grid grid-cols-2 gap-6 mb-6">
-              <div class="col-span-2">
-                <h4 class="text-xs font-bold text-indigo-600 uppercase tracking-wider mb-4 border-b border-indigo-50 pb-1">Thông tin cơ bản</h4>
+          <form [formGroup]="form" (ngSubmit)="save()" class="p-6 overflow-y-auto space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-gray-500 mb-1 italic">Tên đăng nhập *</label>
+                <input type="text" formControlName="username" class="app-input" placeholder="Mã NV / Mã SV">
               </div>
-              
-              <div class="col-span-1">
-                <label class="block text-sm font-semibold text-gray-700 mb-1.5 ml-1">Tên đăng nhập <span class="text-red-500">*</span></label>
-                <input type="text" formControlName="username" placeholder="Mã NV / Mã SV"
-                  class="block w-full rounded-xl border-gray-200 bg-gray-50/50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-4 py-2.5 border transition-all">
-              </div>
-
-              <div class="col-span-1">
-                <label class="block text-sm font-semibold text-gray-700 mb-1.5 ml-1">Vai trò <span class="text-red-500">*</span></label>
-                <select formControlName="role"
-                  class="block w-full rounded-xl border-gray-200 bg-gray-50/50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-4 py-2.5 border transition-all">
+              <div>
+                <label class="block text-xs font-bold text-gray-500 mb-1 italic">Vai trò *</label>
+                <select formControlName="role" class="app-select">
                   <option value="STUDENT">Sinh viên</option>
                   <option value="LECTURER">Giảng viên</option>
                   <option value="DEPT_HEAD">Trưởng ngành</option>
@@ -381,103 +256,83 @@ type ImportType = 'STUDENT' | 'LECTURER';
                   <option value="ADMIN">Quản trị viên</option>
                 </select>
               </div>
-
-              <div class="col-span-1">
-                <label class="block text-sm font-semibold text-gray-700 mb-1.5 ml-1">Họ <span class="text-red-500">*</span></label>
-                <input type="text" formControlName="lastName" placeholder="VD: Nguyễn Văn"
-                  class="block w-full rounded-xl border-gray-200 bg-gray-50/50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-4 py-2.5 border">
+              <div>
+                <label class="block text-xs font-bold text-gray-500 mb-1 italic">Họ *</label>
+                <input type="text" formControlName="lastName" class="app-input" placeholder="Nguyễn Văn">
               </div>
-
-              <div class="col-span-1">
-                <label class="block text-sm font-semibold text-gray-700 mb-1.5 ml-1">Tên <span class="text-red-500">*</span></label>
-                <input type="text" formControlName="firstName" placeholder="VD: A"
-                  class="block w-full rounded-xl border-gray-200 bg-gray-50/50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-4 py-2.5 border">
+              <div>
+                <label class="block text-xs font-bold text-gray-500 mb-1 italic">Tên *</label>
+                <input type="text" formControlName="firstName" class="app-input" placeholder="A">
               </div>
-
-              <div class="col-span-1">
-                <label class="block text-sm font-semibold text-gray-700 mb-1.5 ml-1">Email <span class="text-red-500">*</span></label>
-                <input type="email" formControlName="email" placeholder="email@phenikaa-uni.edu.vn"
-                  class="block w-full rounded-xl border-gray-200 bg-gray-50/50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-4 py-2.5 border">
+              <div class="md:col-span-2">
+                <label class="block text-xs font-bold text-gray-500 mb-1 italic">Email *</label>
+                <input type="email" formControlName="email" class="app-input" placeholder="email@phenikaa-uni.edu.vn">
               </div>
-
-              <div class="col-span-1">
-                <label class="block text-sm font-semibold text-gray-700 mb-1.5 ml-1">Số điện thoại</label>
-                <input type="text" formControlName="phone" placeholder="0xxx"
-                  class="block w-full rounded-xl border-gray-200 bg-gray-50/50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-4 py-2.5 border">
-              </div>
-
+              
               @if (form.get('role')?.value === 'STUDENT') {
-                <div class="col-span-2 mt-4">
-                  <h4 class="text-xs font-bold text-indigo-600 uppercase tracking-wider mb-4 border-b border-indigo-50 pb-1">Thông tin Sinh viên</h4>
-                </div>
-                <div class="col-span-1">
-                  <label class="block text-sm font-semibold text-gray-700 mb-1.5 ml-1">Ngành học <span class="text-red-500">*</span></label>
-                  <select formControlName="majorCode"
-                    class="block w-full rounded-xl border-gray-200 bg-gray-50/50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-4 py-2.5 border">
-                    <option value="">Chọn ngành...</option>
-                    @for (m of majors(); track m.code) {
-                      <option [value]="m.code">{{ m.name }}</option>
-                    }
-                  </select>
-                </div>
-                <div class="col-span-1">
-                  <label class="block text-sm font-semibold text-gray-700 mb-1.5 ml-1">Khóa học</label>
-                  <input type="text" formControlName="cohort" placeholder="VD: K17"
-                    class="block w-full rounded-xl border-gray-200 bg-gray-50/50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-4 py-2.5 border">
+                <div class="md:col-span-2 border-t border-gray-50 pt-3">
+                  <label class="block text-xs font-bold text-indigo-500 mb-2 italic">Dành cho Sinh viên</label>
+                  <div class="grid grid-cols-2 gap-4">
+                    <div>
+                      <label class="block text-[10px] uppercase font-bold text-gray-400 mb-1">Ngành học *</label>
+                      <select formControlName="majorCode" class="app-select">
+                        <option value="">Chọn ngành...</option>
+                        @for (m of majors(); track m.code) {
+                          <option [value]="m.code">{{ m.name }}</option>
+                        }
+                      </select>
+                    </div>
+                    <div>
+                      <label class="block text-[10px] uppercase font-bold text-gray-400 mb-1">Khóa</label>
+                      <input type="text" formControlName="cohort" class="app-input" placeholder="K17">
+                    </div>
+                  </div>
                 </div>
               }
 
               @if (['LECTURER', 'DEPT_HEAD'].includes(form.get('role')?.value)) {
-                <div class="col-span-2 mt-4">
-                  <h4 class="text-xs font-bold text-indigo-600 uppercase tracking-wider mb-4 border-b border-indigo-50 pb-1">Thông tin Giảng viên</h4>
-                </div>
-                <div class="col-span-1">
-                  <label class="block text-sm font-semibold text-gray-700 mb-1.5 ml-1">Khoa <span class="text-red-500">*</span></label>
-                  <select formControlName="facultyCode"
-                    class="block w-full rounded-xl border-gray-200 bg-gray-50/50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-4 py-2.5 border">
-                    <option value="">Chọn khoa...</option>
-                    @for (f of faculties(); track f.code) {
-                      <option [value]="f.code">{{ f.name }}</option>
+                <div class="md:col-span-2 border-t border-gray-50 pt-3">
+                  <label class="block text-xs font-bold text-indigo-500 mb-2 italic">Dành cho Giảng viên</label>
+                  <div class="grid grid-cols-2 gap-4">
+                    <div>
+                      <label class="block text-[10px] uppercase font-bold text-gray-400 mb-1">Khoa *</label>
+                      <select formControlName="facultyCode" class="app-select">
+                        <option value="">Chọn khoa...</option>
+                        @for (f of faculties(); track f.code) {
+                          <option [value]="f.code">{{ f.name }}</option>
+                        }
+                      </select>
+                    </div>
+                    <div>
+                      <label class="block text-[10px] uppercase font-bold text-gray-400 mb-1">Hạn mức SV/đợt</label>
+                      <input type="number" formControlName="maxStudentsPerBatch" class="app-input">
+                    </div>
+                    @if (form.get('role')?.value === 'DEPT_HEAD') {
+                      <div class="md:col-span-2">
+                        <label class="block text-[10px] uppercase font-bold text-indigo-600 mb-1">Ngành quản lý *</label>
+                        <select formControlName="managedMajorCode" class="app-select">
+                          <option value="">Chọn ngành quản lý...</option>
+                          @for (m of getMajorsByFaculty(form.get('facultyCode')?.value); track m.code) {
+                            <option [value]="m.code">{{ m.name }}</option>
+                          }
+                        </select>
+                      </div>
                     }
-                  </select>
-                </div>
-                <div class="col-span-1">
-                  <label class="block text-sm font-semibold text-gray-700 mb-1.5 ml-1">Số SV tối đa/đợt</label>
-                  <input type="number" formControlName="maxStudentsPerBatch"
-                    class="block w-full rounded-xl border-gray-200 bg-gray-50/50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-4 py-2.5 border">
-                </div>
-                
-                @if (form.get('role')?.value === 'DEPT_HEAD') {
-                  <div class="col-span-1">
-                     <label class="block text-sm font-semibold text-gray-700 mb-1.5 ml-1">Ngành quản lý <span class="text-red-500">*</span></label>
-                     <select formControlName="managedMajorCode"
-                       class="block w-full rounded-xl border-gray-200 bg-gray-50/50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-4 py-2.5 border">
-                       <option value="">Chọn ngành quản lý...</option>
-                       @for (m of getMajorsByFaculty(form.get('facultyCode')?.value); track m.code) {
-                         <option [value]="m.code">{{ m.name }}</option>
-                       }
-                     </select>
                   </div>
-                }
+                </div>
               }
             </div>
 
             @if (errorMessage()) {
-              <div class="p-4 bg-red-50 border-l-4 border-red-500 rounded-lg flex items-center mb-6 animate-pulse">
-                <mat-icon class="text-red-500 mr-3">error_outline</mat-icon>
-                <p class="text-sm text-red-700 font-medium">{{ errorMessage() }}</p>
+              <div class="p-3 bg-red-50 text-red-600 rounded text-xs italic font-medium border border-red-100">
+                {{ errorMessage() }}
               </div>
             }
 
-            <div class="flex justify-end space-x-4 pt-4 border-t border-gray-100">
-              <button type="button" (click)="closeModal()"
-                class="px-5 py-2.5 text-sm font-semibold text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-all">
-                Hủy bỏ
-              </button>
-              <button type="submit" [disabled]="submitting()"
-                class="inline-flex items-center px-6 py-2.5 text-sm font-bold text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 disabled:opacity-50 transition-all shadow-lg shadow-indigo-200">
-                <mat-icon class="mr-2 !text-[18px]" *ngIf="!submitting()">check_circle</mat-icon>
-                {{ submitting() ? 'Đang xử lý...' : 'Xác nhận Thêm' }}
+            <div class="flex justify-end gap-2 pt-4 border-t border-gray-50 italic">
+              <button type="button" (click)="closeModal()" class="px-4 py-2 text-xs font-bold text-gray-500 hover:bg-gray-50 rounded">Hủy</button>
+              <button type="submit" [disabled]="submitting()" class="app-btn-primary !px-6">
+                {{ submitting() ? 'Đang lưu...' : 'Lưu thông tin' }}
               </button>
             </div>
           </form>
@@ -560,7 +415,7 @@ export class UserManagementComponent implements OnInit {
       role: this.roleFilter,
       facultyId: this.facultyFilter,
       majorCode: this.majorFilter,
-      sort: `${this.sortBy()},${this.sortDir()}`
+      sort: `${this.sortBy()}, ${this.sortDir()}`
     }).subscribe({
       next: (res: PageResponse<UserResponse>) => {
         this.users.set(res.content);

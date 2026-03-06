@@ -6,6 +6,7 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { TopicService, Topic } from '../../core/topic.service';
 import { TopicDialogComponent } from './topic-dialog.component';
+import { TopicDetailDialogComponent } from './topic-detail-dialog.component';
 import { BatchService } from '../../core/batch.service';
 import { UserService } from '../../core/user.service';
 
@@ -14,152 +15,112 @@ import { UserService } from '../../core/user.service';
   standalone: true,
   imports: [CommonModule, MatIconModule, MatDialogModule, MatSnackBarModule, FormsModule],
   template: `
-    <div class="space-y-6">
-      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+    <div class="space-y-4">
+      <!-- Header -->
+      <div class="app-section-header flex flex-col md:flex-row justify-between items-center gap-4">
         <div>
-          <h2 class="text-2xl font-bold text-gray-900">Quản lý đề tài của tôi</h2>
-          <p class="text-sm text-gray-500 mt-1">Đề xuất và quản lý các đề tài đồ án bạn hướng dẫn.</p>
+          <h2 class="app-title">Quản lý đề tài của tôi</h2>
+          <p class="app-subtitle">Đề xuất và quản lý các đề tài đồ án bạn hướng dẫn.</p>
         </div>
-        <button (click)="openTopicDialog()" 
-          class="inline-flex items-center px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-xl transition-all shadow-lg shadow-indigo-100 active:scale-95">
-          <mat-icon class="mr-2 !text-lg">add</mat-icon>
-          Tạo đề tài mới
+        <button (click)="openTopicDialog()" class="app-btn-primary">
+          <mat-icon class="mr-1.5 !text-base">add</mat-icon> Tạo đề tài mới
         </button>
       </div>
 
-      <!-- Search & Filters -->
-      <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-wrap gap-4 items-center">
-        <div class="relative flex-grow min-w-[300px]">
-          <span class="absolute inset-y-0 left-0 pl-3 flex items-center pt-1">
-            <mat-icon class="text-gray-400">search</mat-icon>
-          </span>
+      <!-- Filters -->
+      <div class="app-card p-3 flex flex-wrap gap-2 items-center">
+        <div class="relative flex-grow min-w-[200px]">
+          <mat-icon class="absolute left-3 top-1/2 -translate-y-1/2 !text-base text-gray-400">search</mat-icon>
           <input type="text" [(ngModel)]="searchQuery" (ngModelChange)="onFilterChange()"
-            placeholder="Tìm theo tên đề tài..."
-            class="block w-full pl-10 pr-3 py-2.5 border border-gray-100 rounded-xl text-sm bg-gray-50/50 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-none">
+            placeholder="Tìm đề tài..." class="app-input pl-9" />
         </div>
 
-        <select [(ngModel)]="selectedBatch" (ngModelChange)="onFilterChange()"
-          class="px-4 py-2.5 border border-gray-100 rounded-xl text-sm bg-gray-50/50 focus:bg-white outline-none min-w-[180px]">
-          <option value="">Tất cả đợt đồ án</option>
+        <select [(ngModel)]="selectedBatch" (ngModelChange)="onFilterChange()" class="app-select min-w-[150px]">
+          <option value="">Tất cả đợt</option>
           @for (batch of batches(); track batch.id) {
             <option [value]="batch.id">{{ batch.name }}</option>
           }
         </select>
 
-        <select [(ngModel)]="selectedStatus" (ngModelChange)="onFilterChange()"
-          class="px-4 py-2.5 border border-gray-100 rounded-xl text-sm bg-gray-50/50 focus:bg-white outline-none min-w-[150px]">
-          <option value="">Tất cả trạng thái</option>
+        <select [(ngModel)]="selectedStatus" (ngModelChange)="onFilterChange()" class="app-select min-w-[130px]">
+          <option value="">Trạng thái</option>
           <option value="AVAILABLE">Sẵn sàng</option>
           <option value="FULL">Đã đầy</option>
           <option value="CLOSED">Đã đóng</option>
           <option value="REJECTED">Bị từ chối</option>
         </select>
 
-        <select [(ngModel)]="selectedMajor" (ngModelChange)="onFilterChange()"
-          class="px-4 py-2.5 border border-gray-100 rounded-xl text-sm bg-gray-50/50 focus:bg-white outline-none min-w-[180px]">
-          <option value="">Tất cả ngành học</option>
+        <select [(ngModel)]="selectedMajor" (ngModelChange)="onFilterChange()" class="app-select min-w-[150px]">
+          <option value="">Ngành học</option>
           @for (major of majors(); track major.id) {
             <option [value]="major.code">{{ major.name }}</option>
           }
         </select>
 
-        <button (click)="resetFilters()" class="p-2.5 text-gray-400 hover:text-indigo-600 transition-colors" title="Đặt lại bộ lọc">
-          <mat-icon>restart_alt</mat-icon>
+        <button (click)="resetFilters()" class="app-btn-ghost" title="Đặt lại">
+          <mat-icon class="!text-lg">restart_alt</mat-icon>
         </button>
       </div>
 
+      <!-- Content -->
       @if (loading()) {
-        <div class="flex justify-center py-12">
-          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+        <div class="flex justify-center py-10">
+          <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div>
         </div>
       } @else if (topics().length === 0) {
-        <div class="bg-white rounded-2xl border-2 border-dashed border-gray-100 p-12 text-center">
-          <div class="bg-indigo-50 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <mat-icon class="text-indigo-600">inventory_2</mat-icon>
-          </div>
-          <h3 class="text-lg font-bold text-gray-900">Chưa có đề tài nào</h3>
-          <p class="text-gray-500 mt-2 max-w-xs mx-auto">Hãy bắt đầu bằng cách đề xuất đề tài đồ án đầu tiên của bạn cho sinh viên.</p>
-          <button (click)="openTopicDialog()" class="mt-6 text-indigo-600 font-bold hover:underline">Tạo đề tài ngay</button>
+        <div class="p-10 text-center border border-dashed border-gray-200 rounded-lg bg-gray-50/30">
+          <h3 class="text-sm font-bold text-gray-900">Chưa có đề tài nào</h3>
+          <p class="text-xs text-gray-500 mt-1 max-w-xs mx-auto">Hãy bắt đầu bằng cách đề xuất đề tài đồ án đầu tiên của bạn cho sinh viên.</p>
         </div>
       } @else {
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="app-list-container">
           @for (topic of topics(); track topic.id) {
-            <div class="bg-white rounded-2xl border border-gray-100 p-6 flex flex-col hover:shadow-xl hover:shadow-gray-100/50 transition-all group">
-              <div class="flex justify-between items-start mb-4">
-                <div class="flex flex-col gap-1 pr-4">
+            <div class="app-list-item">
+              <div class="flex flex-col sm:flex-row justify-between gap-4">
+                <div class="flex-grow min-w-0">
                   <div class="flex items-center gap-2 mb-1">
-                    <span [class]="getStatusClass(topic.status)" 
-                      class="px-2 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider">
-                      {{ getStatusLabel(topic.status) }}
-                    </span>
-                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-tighter bg-gray-50 px-2 py-0.5 rounded-lg">
-                      {{ topic.batchName }}
-                    </span>
+                    <span [class]="getStatusClass(topic.status)" class="app-badge">{{ getStatusLabel(topic.status) }}</span>
+                    <span class="app-badge border-gray-100 bg-gray-50 text-gray-400 lowercase">{{ topic.batchName }}</span>
                   </div>
-                  <h3 class="text-lg font-bold text-gray-900 leading-tight group-hover:text-indigo-600 transition-colors">
-                    {{ topic.title }}
-                  </h3>
-                </div>
-                <div class="flex gap-1 shrink-0">
-                  @if (topic.status === 'AVAILABLE' || topic.status === 'FULL') {
-                    <button (click)="closeTopic(topic.id)" 
-                      class="p-2 hover:bg-amber-50 text-gray-400 hover:text-amber-600 rounded-lg transition-colors" title="Đóng đề tài (Dừng nhận SV)">
-                      <mat-icon class="!text-lg">lock_outline</mat-icon>
-                    </button>
-                  } @else if (topic.status === 'CLOSED') {
-                    <button (click)="reopenTopic(topic.id)" 
-                      class="p-2 hover:bg-emerald-50 text-gray-400 hover:text-emerald-600 rounded-lg transition-colors" title="Mở lại đề tài (Tiếp tục nhận SV)">
-                      <mat-icon class="!text-lg">lock_open</mat-icon>
-                    </button>
-                  }
-
-                  @if (canEdit(topic)) {
-                    <button (click)="openTopicDialog(topic)" 
-                      class="p-2 hover:bg-indigo-50 text-gray-400 hover:text-indigo-600 rounded-lg transition-colors" title="Chỉnh sửa">
-                      <mat-icon class="!text-lg">edit</mat-icon>
-                    </button>
-                  }
-                  
-                  @if (topic.status !== 'CLOSED' && topic.currentStudents === 0) {
-                    <button (click)="confirmDelete(topic)" 
-                      class="p-2 hover:bg-rose-50 text-gray-400 hover:text-rose-600 rounded-lg transition-colors" title="Xóa">
-                      <mat-icon class="!text-lg">delete</mat-icon>
-                    </button>
-                  }
-                </div>
-              </div>
-
-              <p class="text-sm text-gray-600 line-clamp-3 mb-6 flex-grow">
-                {{ topic.description || 'Không có mô tả.' }}
-              </p>
-
-              <div class="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-gray-50">
-                <div class="flex items-center gap-4">
-                  <div class="flex items-center text-gray-500">
-                    <mat-icon class="!text-base mr-1.5">groups</mat-icon>
-                    <span class="text-xs font-bold text-gray-900">{{ topic.currentStudents }}/{{ topic.maxStudents }}</span>
-                    <span class="text-xs text-gray-400 ml-1">sinh viên</span>
+                  <h3 (click)="viewTopicDetail(topic)" class="text-sm font-bold text-gray-900 leading-snug cursor-pointer hover:text-indigo-600 transition-colors" title="Xem chi tiết">{{ topic.title }}</h3>
+                  <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-[11px] text-gray-500">
+                    <span class="flex items-center gap-1"><mat-icon class="!text-xs">groups</mat-icon> {{ topic.currentStudents }}/{{ topic.maxStudents }} SV</span>
+                    @if (topic.majorName) {
+                      <span class="flex items-center gap-1"><mat-icon class="!text-xs">school</mat-icon> {{ topic.majorName }}</span>
+                    }
+                    <span>• Ngày tạo: {{ topic.createdAt | date:'dd/MM/yyyy' }}</span>
                   </div>
-                  @if (topic.majorName) {
-                    <div class="flex items-center text-gray-500">
-                      <mat-icon class="!text-base mr-1.5">school</mat-icon>
-                      <span class="text-xs font-bold text-gray-900">{{ topic.majorName }}</span>
+                  @if (topic.status === 'REJECTED' && topic.rejectReason) {
+                    <div class="mt-2 bg-rose-50 p-2 rounded border border-rose-100 text-[11px] text-rose-700 italic">
+                      Lý do từ chối: {{ topic.rejectReason }}
                     </div>
                   }
                 </div>
-                <div class="text-[10px] text-gray-400 font-medium italic">
-                  Tạo ngày: {{ topic.createdAt | date:'dd/MM/yyyy' }}
+
+                <div class="flex sm:flex-col items-center sm:items-end justify-center gap-1 shrink-0">
+                  <div class="flex gap-1">
+                    @if (topic.status === 'AVAILABLE' || topic.status === 'FULL') {
+                      <button (click)="closeTopic(topic.id)" class="app-btn-ghost text-amber-500" title="Đóng đề tài">
+                        <mat-icon class="!text-lg">lock_outline</mat-icon>
+                      </button>
+                    } @else if (topic.status === 'CLOSED') {
+                      <button (click)="reopenTopic(topic.id)" class="app-btn-ghost text-emerald-500" title="Mở lại đề tài">
+                        <mat-icon class="!text-lg">lock_open</mat-icon>
+                      </button>
+                    }
+                    @if (canEdit(topic)) {
+                      <button (click)="openTopicDialog(topic)" class="app-btn-ghost text-indigo-500" title="Sửa">
+                        <mat-icon class="!text-lg">edit</mat-icon>
+                      </button>
+                    }
+                    @if (topic.status !== 'CLOSED' && topic.currentStudents === 0) {
+                      <button (click)="confirmDelete(topic)" class="app-btn-ghost text-rose-500" title="Xóa">
+                        <mat-icon class="!text-lg">delete</mat-icon>
+                      </button>
+                    }
+                  </div>
                 </div>
               </div>
-
-              @if (topic.status === 'REJECTED' && topic.rejectReason) {
-                <div class="mt-4 p-3 bg-rose-50 rounded-xl border border-rose-100">
-                  <p class="text-xs font-bold text-rose-600 uppercase mb-1 flex items-center">
-                    <mat-icon class="!text-xs mr-1">warning</mat-icon> Lý do từ chối:
-                  </p>
-                  <p class="text-xs text-rose-800 italic">{{ topic.rejectReason }}</p>
-                </div>
-              }
             </div>
           }
         </div>
@@ -167,6 +128,7 @@ import { UserService } from '../../core/user.service';
     </div>
   `
 })
+
 export class TopicsComponent implements OnInit {
   private topicService = inject(TopicService);
   private batchService = inject(BatchService);
@@ -310,6 +272,15 @@ export class TopicsComponent implements OnInit {
       case 'FULL': return 'bg-gray-50 text-gray-500 border border-gray-100';
       default: return 'bg-gray-50 text-gray-600';
     }
+  }
+
+  viewTopicDetail(topic: Topic): void {
+    this.dialog.open(TopicDetailDialogComponent, {
+      width: '720px',
+      maxHeight: '90vh',
+      data: { topicId: topic.id },
+      autoFocus: false
+    });
   }
 
   canEdit(topic: Topic): boolean {

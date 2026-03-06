@@ -57,67 +57,82 @@ const MENU_MAP: Record<string, MenuItem[]> = {
   standalone: true,
   imports: [RouterOutlet, RouterLink, RouterLinkActive, MatIconModule, CommonModule],
   template: `
-    <div class="flex h-screen bg-gray-50">
+    <div class="flex h-screen bg-white">
       <!-- Sidebar -->
-      <aside class="w-64 bg-white border-r border-gray-200 flex flex-col">
-        <div class="h-16 flex items-center px-6 border-b border-gray-200">
-          <mat-icon class="text-indigo-600 mr-2">school</mat-icon>
-          <span class="text-lg font-bold text-gray-900">ThesisMgr</span>
+      <aside class="w-64 bg-gray-50/50 border-r border-gray-100 flex flex-col animate-in slide-in-from-left-2 duration-300">
+        <div class="h-16 flex items-center px-6 border-b border-gray-100 gap-2">
+          <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-indigo-100">
+            <mat-icon class="!text-lg">school</mat-icon>
+          </div>
+          <div class="flex flex-col">
+            <span class="text-xs font-black text-gray-900 uppercase tracking-widest leading-none">ThesisMgr</span>
+            <span class="text-[9px] font-bold text-indigo-500 uppercase tracking-tighter italic">Quản lý Đồ án</span>
+          </div>
         </div>
         
-        <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+        <nav class="flex-1 overflow-y-auto py-6 px-4 space-y-1.5 scrollbar-hide">
           @for (item of menuItems(); track item.path) {
-            <a [routerLink]="item.path" routerLinkActive="bg-indigo-50 text-indigo-600"
+            <a [routerLink]="item.path" routerLinkActive="!bg-white !text-indigo-600 shadow-sm border-indigo-100"
                [routerLinkActiveOptions]="{exact: item.exact}"
-               class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-50 hover:text-gray-900">
-              <mat-icon class="mr-3 text-gray-400">{{item.icon}}</mat-icon>
+               class="flex items-center px-3 py-2 text-[12px] font-bold rounded-lg text-gray-500 hover:bg-white hover:text-indigo-600 border border-transparent transition-all group">
+              <mat-icon class="mr-3 !text-lg text-gray-300 group-hover:text-indigo-400">{{item.icon}}</mat-icon>
               {{item.label}}
             </a>
           }
         </nav>
         
-        <div class="p-4 border-t border-gray-200">
-          <div class="flex items-center">
-            <div class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-sm">
-              {{auth.currentUser()?.name?.charAt(0) ?? '?'}}
-            </div>
-            <div class="ml-3 min-w-0">
-              <p class="text-sm font-medium text-gray-700 truncate">{{auth.currentUser()?.name}}</p>
-              <p class="text-xs text-gray-500">{{activeRoleLabel()}}</p>
-            </div>
+        <!-- Profile Section -->
+        <div class="p-4 border-t border-gray-100 bg-white/50 m-2 rounded-xl border border-gray-100 shadow-sm">
+          <div class="flex items-center gap-3">
+             <div class="w-9 h-9 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-xs ring-2 ring-indigo-50 shadow-md">
+               {{auth.currentUser()?.name?.charAt(0) ?? '?'}}
+             </div>
+             <div class="min-w-0">
+               <p class="text-[11px] font-black text-gray-900 truncate tracking-tight">{{auth.currentUser()?.name}}</p>
+               <p class="text-[9px] text-indigo-500 font-bold italic uppercase tracking-tighter">{{activeRoleLabel()}}</p>
+             </div>
           </div>
           <button (click)="logout()"
-            class="mt-4 w-full flex items-center justify-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+            class="mt-4 w-full flex items-center justify-center gap-2 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all border border-transparent hover:border-red-100">
+            <mat-icon class="!text-sm">power_settings_new</mat-icon>
             Đăng xuất
           </button>
         </div>
       </aside>
 
       <!-- Main content -->
-      <div class="flex-1 flex flex-col overflow-hidden">
-        <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6">
-          <h1 class="text-xl font-semibold text-gray-900">Hệ thống Quản lý Đồ án</h1>
+      <div class="flex-1 flex flex-col overflow-hidden bg-white">
+        <!-- Topbar -->
+        <header class="h-16 border-b border-gray-100 flex items-center justify-between px-8 bg-white/80 backdrop-blur-md z-10 sticky top-0">
+          <div class="flex items-center gap-4">
+            <h1 class="text-xs font-black text-gray-400 uppercase tracking-widest italic">Phenikaa University Thesis System</h1>
+          </div>
           
-          <div class="flex items-center space-x-4">
-            <button (click)="goToNotifications()" class="p-2 text-gray-400 hover:text-gray-500 relative group">
-              <mat-icon>notifications</mat-icon>
+          <div class="flex items-center gap-6">
+            <button (click)="goToNotifications()" class="p-2 text-gray-400 hover:text-indigo-600 relative group transition-colors">
+              <mat-icon class="!text-xl">notifications_none</mat-icon>
               @if (notificationService.unreadCount() > 0) {
-                <span class="absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white ring-2 ring-white">
-                  {{ notificationService.unreadCount() > 99 ? '99+' : notificationService.unreadCount() }}
+                <span class="absolute top-1.5 right-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-500 text-[8px] font-black text-white ring-2 ring-white animate-pulse">
+                  {{ notificationService.unreadCount() > 9 ? '9+' : notificationService.unreadCount() }}
                 </span>
               }
             </button>
             
+            <div class="h-6 w-px bg-gray-100"></div>
+
             @if (auth.currentUser(); as user) {
               @if (user.roles.length > 1) {
-                <select [value]="user.activeRole" (change)="changeRole($event)"
-                  class="block pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
-                  @for (role of user.roles; track role) {
-                    <option [value]="role">{{ roleLabel(role) }}</option>
-                  }
-                </select>
+                <div class="flex items-center gap-2">
+                   <span class="text-[10px] font-black text-gray-400 uppercase tracking-tighter">Vai trò</span>
+                   <select [value]="user.activeRole" (change)="changeRole($event)"
+                     class="app-select !py-1 !px-2 !text-[11px] font-bold border-indigo-100 text-indigo-700 bg-indigo-50/50 italic">
+                     @for (role of user.roles; track role) {
+                       <option [value]="role">{{ roleLabel(role) }}</option>
+                     }
+                   </select>
+                </div>
               } @else {
-                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                <span class="app-badge font-black uppercase tracking-widest !bg-indigo-50 !text-indigo-600 border-indigo-100 italic">
                   {{ activeRoleLabel() }}
                 </span>
               }
@@ -125,7 +140,8 @@ const MENU_MAP: Record<string, MenuItem[]> = {
           </div>
         </header>
 
-        <main class="flex-1 overflow-y-auto bg-gray-50 p-6">
+        <!-- Viewport -->
+        <main class="flex-1 overflow-y-auto p-4 lg:p-6 scroll-smooth bg-gray-50/30">
           <router-outlet></router-outlet>
         </main>
       </div>

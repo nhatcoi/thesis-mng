@@ -2,6 +2,7 @@ package com.phenikaa.thesis.topic.controller;
 
 import com.phenikaa.thesis.common.dto.ApiResponse;
 import com.phenikaa.thesis.common.util.SecurityUtils;
+import com.phenikaa.thesis.topic.dto.TopicDetailResponse;
 import com.phenikaa.thesis.topic.dto.TopicRequest;
 import com.phenikaa.thesis.topic.dto.TopicResponse;
 import com.phenikaa.thesis.topic.service.TopicService;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import com.phenikaa.thesis.topic.entity.enums.TopicStatus;
 
 import java.util.UUID;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/topics")
@@ -36,6 +38,25 @@ public class TopicController {
             Pageable pageable) {
         User user = getCurrentUser();
         return ApiResponse.ok(topicService.getMyTopics(user, batchId, status, majorCode, search, pageable));
+    }
+
+    @GetMapping("/available")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ApiResponse<List<TopicResponse>> getAvailableTopics(
+            @RequestParam(required = false) UUID batchId,
+            @RequestParam(required = false) String majorCode,
+            @RequestParam(required = false) String search) {
+        return ApiResponse.ok(topicService.getAvailableTopics(batchId, majorCode, search));
+    }
+
+    @GetMapping("/{id}")
+    public ApiResponse<TopicResponse> getTopicById(@PathVariable UUID id) {
+        return ApiResponse.ok(topicService.getTopicById(id));
+    }
+
+    @GetMapping("/{id}/detail")
+    public ApiResponse<TopicDetailResponse> getTopicDetail(@PathVariable UUID id) {
+        return ApiResponse.ok(topicService.getTopicDetail(id));
     }
 
     @PostMapping

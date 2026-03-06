@@ -29,4 +29,12 @@ export class TopicRegistrationService {
     approveRegistration(id: string, req: { status: string; rejectReason?: string }): Observable<any> {
         return this.http.patch<any>(`${this.baseUrl}/${id}/approve`, req);
     }
+
+    registerTopic(topicId: string): Observable<any> {
+        return this.http.post<any>(this.baseUrl, { topicId });
+    }
+
+    getMyStudentRegistrations(): Observable<any> {
+        return this.http.get<any>(`${this.baseUrl}/my`);
+    }
 }

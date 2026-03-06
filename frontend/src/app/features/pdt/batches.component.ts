@@ -11,103 +11,89 @@ import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
   standalone: true,
   imports: [MatIconModule, CommonModule, FormsModule],
   template: `
-    <div class="space-y-6">
-      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <div class="space-y-4">
+      <!-- Header -->
+      <div class="app-section-header flex flex-col md:flex-row justify-between items-center gap-4">
         <div>
-          <h2 class="text-2xl font-bold text-gray-900">Quản lý đợt đồ án</h2>
-          <p class="mt-1 text-sm text-gray-500">Thiết lập và theo dõi các đợt đồ án tốt nghiệp trong hệ thống.</p>
+          <h2 class="app-title">Quản lý đợt đồ án</h2>
+          <p class="app-subtitle">Thiết lập và theo dõi các đợt đồ án tốt nghiệp trong hệ thống.</p>
         </div>
-        <button (click)="goToCreate()"
-          class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 transition-all">
-          <mat-icon class="mr-2 !text-[20px]">add</mat-icon>
-          Tạo đợt đồ án mới
+        <button (click)="goToCreate()" class="app-btn-primary">
+          <mat-icon class="mr-1.5 !text-base">add</mat-icon> Tạo đợt đồ án mới
         </button>
       </div>
 
-      <!-- Filters & Search -->
-      <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col md:flex-row gap-4 items-center">
-        <div class="relative flex-1 w-full">
-          <span class="absolute inset-y-0 left-0 pl-3 flex items-center pt-1">
-            <mat-icon class="text-gray-400">search</mat-icon>
-          </span>
+      <!-- Filters -->
+      <div class="app-card p-3 flex flex-wrap gap-2 items-center">
+        <div class="relative flex-grow min-w-[200px]">
+          <mat-icon class="absolute left-3 top-1/2 -translate-y-1/2 !text-base text-gray-400">search</mat-icon>
           <input type="text" [(ngModel)]="searchQuery" (ngModelChange)="onSearchChange($event)"
-            placeholder="Tìm theo tên đợt, năm học..."
-            class="block w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-xl leading-5 bg-gray-50/50 placeholder-gray-400 focus:outline-none focus:bg-white focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all border">
+            placeholder="Tìm theo tên đợt, năm học..." class="app-input pl-9" />
         </div>
         
-        <div class="w-full md:w-48">
-          <select [(ngModel)]="statusFilter" (change)="refresh()"
-            class="block w-full px-3 py-2.5 border border-gray-200 bg-gray-50/50 rounded-xl focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm border transition-all">
-            <option [ngValue]="null">Tất cả trạng thái</option>
-            <option value="DRAFT">Bản nháp</option>
-            <option value="ACTIVE">Đang hoạt động</option>
-            <option value="CLOSED">Đã đóng</option>
-          </select>
-        </div>
+        <select [(ngModel)]="statusFilter" (change)="refresh()" class="app-select min-w-[150px]">
+          <option [ngValue]="null">Tất cả trạng thái</option>
+          <option value="DRAFT">Bản nháp</option>
+          <option value="ACTIVE">Đang hoạt động</option>
+          <option value="CLOSED">Đã đóng</option>
+        </select>
       </div>
 
-      <!-- Batch Table -->
-      <div class="bg-white shadow-sm border border-gray-200 rounded-xl overflow-hidden">
+      <!-- Table Content -->
+      <div class="app-card">
         <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
+          <table class="w-full text-left border-collapse">
+            <thead class="bg-gray-50/50 border-b border-gray-100">
               <tr>
-                <th (click)="toggleSort('name')" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors">
-                   <div class="flex items-center gap-1">
-                      Tên đợt đồ án
-                      <mat-icon class="!text-[14px] !w-auto !h-auto text-gray-400" *ngIf="sortBy() === 'name'">{{ sortDir() === 'asc' ? 'arrow_upward' : 'arrow_downward' }}</mat-icon>
-                   </div>
+                <th (click)="toggleSort('name')" class="p-3 text-[11px] font-bold text-gray-500 uppercase tracking-wider cursor-pointer hover:text-indigo-600 transition-colors">
+                  Tên đợt đồ án
                 </th>
-                <th (click)="toggleSort('academicYear.name')" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors">
-                   <div class="flex items-center gap-1">
-                      Năm học - HK
-                      <mat-icon class="!text-[14px] !w-auto !h-auto text-gray-400" *ngIf="sortBy() === 'academicYear.name'">{{ sortDir() === 'asc' ? 'arrow_upward' : 'arrow_downward' }}</mat-icon>
-                   </div>
+                <th (click)="toggleSort('academicYear.name')" class="p-3 text-[11px] font-bold text-gray-500 uppercase tracking-wider cursor-pointer hover:text-indigo-600 transition-colors">
+                  Năm học - HK
                 </th>
-                <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Mốc thời gian chính</th>
-                <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Trạng thái</th>
-                <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Thao tác</th>
+                <th class="p-3 text-[11px] font-bold text-gray-500 uppercase tracking-wider">Thời gian</th>
+                <th class="p-3 text-[11px] font-bold text-gray-500 uppercase tracking-wider">Trạng thái</th>
+                <th class="p-3 text-[11px] font-bold text-gray-500 uppercase tracking-wider text-right">HÀNH ĐỘNG</th>
               </tr>
             </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
+            <tbody class="divide-y divide-gray-100 italic">
               @for (batch of batches(); track batch.id) {
-                <tr class="hover:bg-gray-50 transition-colors">
-                  <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="text-sm font-medium text-gray-900">{{ batch.name }}</div>
-                    <div class="text-xs text-gray-400">Người tạo: {{ batch.createdByName }}</div>
+                <tr class="hover:bg-gray-50/50 transition-colors text-xs">
+                  <td class="p-3">
+                    <div class="font-bold text-gray-900">{{ batch.name }}</div>
                   </td>
-                  <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="text-sm text-gray-900 font-medium">{{ batch.academicYearName }}</div>
-                    <div class="text-xs text-gray-500">Học kỳ {{ batch.semester }}</div>
+                  <td class="p-3">
+                    <div class="font-bold text-gray-700">{{ batch.academicYearName }}</div>
+                    <div class="text-[10px] text-gray-400">Học kỳ {{ batch.semester }}</div>
                   </td>
-                  <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="text-xs text-gray-600">
-                      <p>ĐK đề tài: {{ batch.topicRegStart | date:'dd/MM' }} - {{ batch.topicRegEnd | date:'dd/MM' }}</p>
-                      <p>Thực hiện: {{ batch.implementationStart | date:'dd/MM' }} - {{ batch.implementationEnd | date:'dd/MM' }}</p>
+                  <td class="p-3">
+                    <div class="text-[10px] text-gray-500 leading-normal">
+                      <div>Đăng ký: {{ batch.topicRegStart | date:'dd/MM' }} - {{ batch.topicRegEnd | date:'dd/MM' }}</div>
+                      <div>Thực hiện: {{ batch.implementationStart | date:'dd/MM' }} - {{ batch.implementationEnd | date:'dd/MM' }}</div>
                     </div>
                   </td>
-                  <td class="px-6 py-4 whitespace-nowrap">
-                    <span [class]="statusBadgeClass(batch.status)">
+                  <td class="p-3">
+                    <span [class]="statusBadgeClass(batch.status)" class="app-badge">
                       {{ statusLabel(batch.status) }}
                     </span>
                   </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <td class="p-3 text-right">
                     <div class="flex justify-end gap-1">
                       @if (batch.status === 'DRAFT') {
-                        <button (click)="activate(batch)" title="Kích hoạt" class="p-1.5 hover:bg-green-50 text-green-600 rounded-lg transition-colors">
-                          <mat-icon class="!text-[20px]">play_circle</mat-icon>
+                        <button (click)="activate(batch)" class="app-btn-ghost text-emerald-500" title="Kích hoạt">
+                          <mat-icon class="!text-lg">play_circle</mat-icon>
                         </button>
-                        <button (click)="remove(batch)" title="Xóa" class="p-1.5 hover:bg-red-50 text-red-500 rounded-lg transition-colors">
-                          <mat-icon class="!text-[20px]">delete_outline</mat-icon>
+                        <button (click)="remove(batch)" class="app-btn-ghost text-rose-500" title="Xóa">
+                          <mat-icon class="!text-lg">delete_outline</mat-icon>
                         </button>
                       }
                       @if (batch.status === 'ACTIVE') {
-                        <button (click)="close(batch)" title="Đóng đợt" class="p-1.5 hover:bg-amber-50 text-amber-600 rounded-lg transition-colors">
-                          <mat-icon class="!text-[20px]">lock_outline</mat-icon>
+                        <button (click)="close(batch)" class="app-btn-ghost text-amber-500" title="Đóng">
+                          <mat-icon class="!text-lg">lock_outline</mat-icon>
                         </button>
                       }
-                      <button (click)="viewDetail(batch.id)" class="p-1.5 hover:bg-indigo-50 text-indigo-600 rounded-lg transition-colors">
-                        <mat-icon class="!text-[20px]">visibility</mat-icon>
+                      <button (click)="viewDetail(batch.id)" class="app-btn-ghost text-indigo-500" title="Xem">
+                        <mat-icon class="!text-lg">visibility</mat-icon>
                       </button>
                     </div>
                   </td>
@@ -115,18 +101,12 @@ import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
               } @empty {
                 @if (loading()) {
                   <tr>
-                    <td colspan="5" class="px-6 py-10 text-center">
-                      <div class="flex justify-center items-center">
-                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-                      </div>
+                    <td colspan="5" class="p-10 text-center text-xs">
+                      <div class="flex justify-center"><div class="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div></div>
                     </td>
                   </tr>
                 } @else {
-                  <tr>
-                    <td colspan="5" class="px-6 py-10 text-center text-sm text-gray-500 font-medium">
-                       CHƯA CÓ DỮ LIỆU ĐỢT ĐỒ ÁN
-                    </td>
-                  </tr>
+                  <tr><td colspan="5" class="p-10 text-center text-[11px] text-gray-400 italic">CHƯA CÓ DỮ LIỆU ĐỢT ĐỒ ÁN</td></tr>
                 }
               }
             </tbody>
@@ -135,15 +115,11 @@ import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 
         <!-- Pagination -->
         @if (totalPages() > 1) {
-          <div class="bg-gray-50 px-6 py-4 border-t border-gray-200 flex items-center justify-between">
-            <div class="text-sm text-gray-700 font-medium font-mono">
-               SHOWING: {{ page() * size() + 1 }} - {{ Math.min((page() + 1) * size(), totalElements()) }} OF {{ totalElements() }}
-            </div>
-            <div class="flex space-x-2">
-               <button (click)="changePage(-1)" [disabled]="page() === 0" 
-                 class="px-4 py-2 text-sm font-bold bg-white border border-gray-200 rounded-xl hover:bg-gray-50 disabled:opacity-50 transition-all">Trước</button>
-               <button (click)="changePage(1)" [disabled]="page() === totalPages() - 1" 
-                 class="px-4 py-2 text-sm font-bold bg-white border border-gray-200 rounded-xl hover:bg-gray-50 disabled:opacity-50 transition-all">Sau</button>
+          <div class="p-3 border-t border-gray-100 bg-gray-50/30 flex items-center justify-between text-[11px] text-gray-500 font-medium">
+            <div>Hiển thị <b>{{ page() * size() + 1 }}</b> - <b>{{ Math.min((page() + 1) * size(), totalElements()) }}</b> (Tổng <b>{{ totalElements() }}</b>)</div>
+            <div class="flex gap-2">
+              <button (click)="changePage(-1)" [disabled]="page() === 0" class="app-btn-secondary !px-3 !py-1 disabled:opacity-30">Trước</button>
+              <button (click)="changePage(1)" [disabled]="page() === totalPages() - 1" class="app-btn-secondary !px-3 !py-1 disabled:opacity-30">Sau</button>
             </div>
           </div>
         }
@@ -152,29 +128,24 @@ import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 
     <!-- Confirm Modal -->
     @if (confirmAction()) {
-      <div class="fixed inset-0 bg-gray-500/75 flex items-center justify-center z-50 animate-in fade-in duration-200">
-        <div class="bg-white rounded-2xl shadow-xl max-w-md w-full mx-4 p-6">
-          <div class="flex items-start">
-            <div class="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center mr-4"
-              [class]="confirmAction()!.type === 'delete' ? 'bg-red-100' : 'bg-amber-100'">
-              <mat-icon [class]="confirmAction()!.type === 'delete' ? 'text-red-600' : 'text-amber-600'">
-                {{ confirmAction()!.type === 'delete' ? 'delete' : 'report_problem' }}
-              </mat-icon>
+      <div class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-lg shadow-2xl max-w-sm w-full p-5 border border-gray-100 animate-in zoom-in-95 duration-200">
+          <div class="flex items-start gap-3">
+            <div class="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
+              [class]="confirmAction()!.type === 'delete' ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-600'">
+              <mat-icon class="!text-[22px]">{{ confirmAction()!.type === 'delete' ? 'delete' : 'priority_high' }}</mat-icon>
             </div>
             <div>
-              <h3 class="text-lg font-bold text-gray-900">{{ confirmAction()!.title }}</h3>
-              <p class="mt-2 text-sm text-gray-500">{{ confirmAction()!.message }}</p>
+              <h3 class="text-sm font-bold text-gray-900 leading-tight mb-1">{{ confirmAction()!.title }}</h3>
+              <p class="text-[11px] text-gray-500 leading-relaxed">{{ confirmAction()!.message }}</p>
             </div>
           </div>
-          <div class="mt-8 flex justify-end space-x-3">
-            <button (click)="cancelConfirm()"
-              class="px-4 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-200 rounded-xl hover:bg-gray-50">
-              Hủy bỏ
-            </button>
+          <div class="mt-6 flex justify-end gap-2 text-xs font-bold">
+            <button (click)="cancelConfirm()" class="px-4 py-2 text-gray-500 hover:bg-gray-50 rounded transition-colors">Hủy</button>
             <button (click)="executeConfirm()"
-              [class]="confirmAction()!.type === 'delete' ? 'bg-red-600 hover:bg-red-700 font-bold' : 'bg-indigo-600 hover:bg-indigo-700 font-bold'"
-              class="px-5 py-2 text-sm text-white rounded-xl transition-all disabled:opacity-50">
-              {{ confirming() ? 'Đang xử lý...' : confirmAction()!.confirmLabel }}
+              [class]="confirmAction()!.type === 'delete' ? 'bg-red-600 hover:bg-red-700' : 'bg-indigo-600 hover:bg-indigo-700'"
+              class="px-4 py-2 text-white rounded transition-all shadow-sm">
+              {{ confirming() ? 'Đang thực hiện...' : confirmAction()!.confirmLabel }}
             </button>
           </div>
         </div>

@@ -22,4 +22,6 @@ public interface ThesisRepository extends JpaRepository<Thesis, UUID>, JpaSpecif
     long countByAdvisorId(UUID advisorId);
 
     java.util.List<Thesis> findByAdvisorId(UUID advisorId);
+
+    java.util.List<Thesis> findByTopicId(UUID topicId);
 }

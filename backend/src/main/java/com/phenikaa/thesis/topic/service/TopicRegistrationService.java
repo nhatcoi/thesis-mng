@@ -28,6 +28,7 @@ public class TopicRegistrationService {
     private final TopicRegistrationRepository registrationRepo;
     private final TopicRepository topicRepo;
     private final com.phenikaa.thesis.thesis.repository.ThesisRepository thesisRepo;
+    private final com.phenikaa.thesis.user.repository.StudentRepository studentRepo;
 
     @Transactional(readOnly = true)
     public List<TopicRegistrationResponse> getMyRegistrations(User user) {
@@ -35,6 +36,64 @@ public class TopicRegistrationService {
                 .stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<TopicRegistrationResponse> getStudentRegistrations(User user) {
+        if (user.getStudent() == null) {
+            return new java.util.ArrayList<>();
+        }
+        return registrationRepo.findByStudentId(user.getStudent().getId())
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public TopicRegistrationResponse registerTopic(User user, UUID topicId) {
+        if (user.getStudent() == null) {
+            throw new BusinessException("Bạn không phải sinh viên");
+        }
+
+        com.phenikaa.thesis.user.entity.Student student = user.getStudent();
+
+        Topic topic = topicRepo.findById(topicId)
+                .orElseThrow(() -> new ResourceNotFoundException("Topic", "id", topicId));
+
+        // Check topic still has slots
+        if (topic.getCurrentStudents() >= topic.getMaxStudents()) {
+            throw new BusinessException("Đề tài này đã đủ số lượng sinh viên");
+        }
+
+        if (topic.getStatus() != com.phenikaa.thesis.topic.entity.enums.TopicStatus.AVAILABLE
+                && topic.getStatus() != com.phenikaa.thesis.topic.entity.enums.TopicStatus.APPROVED) {
+            throw new BusinessException("Đề tài này không ở trạng thái cho phép đăng ký");
+        }
+
+        // Check if student already registered for THIS topic (PENDING)
+        java.util.List<TopicRegistration> existing = registrationRepo.findByStudentId(student.getId());
+        boolean alreadyRegistered = existing.stream()
+                .anyMatch(r -> r.getTopic().getId().equals(topicId) && r.getStatus() == RegistrationStatus.PENDING);
+        if (alreadyRegistered) {
+            throw new BusinessException("Bạn đã đăng ký đề tài này rồi, vui lòng chờ duyệt");
+        }
+
+        // Find the student's thesis record in the same batch
+        com.phenikaa.thesis.thesis.entity.Thesis thesis = thesisRepo.findByStudentIdAndBatchId(
+                student.getId(), topic.getBatch().getId()).orElse(null);
+
+        if (thesis == null) {
+            throw new BusinessException("Bạn chưa được gán vào đợt đồ án này. Vui lòng liên hệ Phòng Đào tạo.");
+        }
+
+        TopicRegistration reg = TopicRegistration.builder()
+                .thesis(thesis)
+                .topic(topic)
+                .student(student)
+                .status(RegistrationStatus.PENDING)
+                .build();
+
+        return mapToResponse(registrationRepo.save(reg));
     }
 
     @Transactional

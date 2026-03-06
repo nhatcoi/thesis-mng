@@ -7,10 +7,12 @@ import com.phenikaa.thesis.topic.dto.TopicRegistrationResponse;
 import com.phenikaa.thesis.topic.service.TopicRegistrationService;
 import com.phenikaa.thesis.user.entity.User;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -26,6 +28,22 @@ public class TopicRegistrationController {
     public ApiResponse<List<TopicRegistrationResponse>> getMyRegistrations() {
         User user = getCurrentUser();
         return ApiResponse.ok(registrationService.getMyRegistrations(user));
+    }
+
+    @GetMapping("/my")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ApiResponse<List<TopicRegistrationResponse>> getMyStudentRegistrations() {
+        User user = getCurrentUser();
+        return ApiResponse.ok(registrationService.getStudentRegistrations(user));
+    }
+
+    @PostMapping
+    @PreAuthorize("hasRole('STUDENT')")
+    @ResponseStatus(HttpStatus.CREATED)
+    public ApiResponse<TopicRegistrationResponse> registerTopic(@RequestBody Map<String, String> body) {
+        User user = getCurrentUser();
+        UUID topicId = UUID.fromString(body.get("topicId"));
+        return ApiResponse.ok(registrationService.registerTopic(user, topicId));
     }
 
     @PatchMapping("/{id}/approve")

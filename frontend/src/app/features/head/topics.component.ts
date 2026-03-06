@@ -6,32 +6,37 @@ import { MatIconModule } from '@angular/material/icon';
   standalone: true,
   imports: [MatIconModule],
   template: `
-    <div class="space-y-6">
-      <h2 class="text-2xl font-bold text-gray-900">Đề tài sinh viên đề xuất</h2>
+    <div class="space-y-4">
+      <div class="app-section-header">
+        <h2 class="app-title">Đề tài sinh viên đề xuất</h2>
+        <p class="app-subtitle">Xem xét và phân công giảng viên hướng dẫn cho các đề tài do sinh viên tự đề xuất.</p>
+      </div>
       
-      <div class="grid gap-6 grid-cols-1 lg:grid-cols-2">
-        <div class="bg-white shadow rounded-lg p-6">
-          <div class="flex justify-between items-start">
-            <div>
-              <h3 class="text-lg font-medium text-gray-900">Ứng dụng AI trong chẩn đoán y khoa</h3>
-              <p class="text-sm text-gray-500 mt-1">Đề xuất bởi: Nguyễn Văn B (20123457)</p>
+      <div class="app-list-container">
+        <!-- Mock Topic 1 -->
+        <div class="app-list-item">
+          <div class="flex flex-col md:flex-row justify-between gap-4">
+            <div class="flex-grow">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="app-badge border-amber-100 bg-amber-50 text-amber-600">CHỜ PHÂN CÔNG</span>
+              </div>
+              <h3 class="text-sm font-bold text-gray-900">Ứng dụng AI trong chẩn đoán y khoa</h3>
+              <p class="text-[11px] text-gray-500 mt-0.5">Đề xuất bởi: <span class="font-bold">Nguyễn Văn B (20123457)</span></p>
+              <p class="text-xs text-gray-600 mt-2 line-clamp-2">
+                Nghiên cứu và ứng dụng các mô hình học sâu để hỗ trợ bác sĩ trong việc chẩn đoán hình ảnh X-quang...
+              </p>
             </div>
-            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">CHỜ PHÂN CÔNG</span>
-          </div>
-          <p class="mt-4 text-sm text-gray-600">
-            Nghiên cứu và ứng dụng các mô hình học sâu để hỗ trợ bác sĩ trong việc chẩn đoán hình ảnh X-quang...
-          </p>
-          <div class="mt-6">
-            <label for="lecturer-select" class="block text-sm font-medium text-gray-700">Phân công giảng viên hướng dẫn</label>
-            <div class="mt-1 flex rounded-md shadow-sm">
-              <select id="lecturer-select" class="flex-1 min-w-0 block w-full px-3 py-2 rounded-none rounded-l-md focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm border-gray-300">
-                <option>Chọn giảng viên...</option>
-                <option>TS. Lê Văn C</option>
-                <option>ThS. Trần Thị D</option>
-              </select>
-              <button class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-r-md text-white bg-indigo-600 hover:bg-indigo-700">
-                Phân công
-              </button>
+            
+            <div class="shrink-0 flex flex-col gap-2 min-w-[200px]">
+              <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Phân công giảng viên</label>
+              <div class="flex gap-1">
+                <select class="app-select flex-grow !py-1 text-xs">
+                  <option>Chọn giảng viên...</option>
+                  <option>TS. Lê Văn C</option>
+                  <option>ThS. Trần Thị D</option>
+                </select>
+                <button class="app-btn-primary !px-3 !py-1">Lưu</button>
+              </div>
             </div>
           </div>
         </div>
@@ -39,4 +44,4 @@ import { MatIconModule } from '@angular/material/icon';
     </div>
   `
 })
-export class TopicsComponent {}
+export class TopicsComponent { }
