@@ -18,7 +18,7 @@ export interface ThesisResponse {
     batchName: string;
     advisorId: string;
     advisorName: string;
-    majorId: string;
+    majorCode: string;
     majorName: string;
     facultyId: string;
     facultyName: string;
@@ -40,10 +40,12 @@ export class ThesisService {
 
     getTheses(params: {
         batchId?: string;
-        majorId?: string;
+        majorCode?: string;
         facultyId?: string;
         status?: string;
         search?: string;
+        showAll?: boolean;
+        unassignedOnly?: boolean;
         page?: number;
         size?: number;
         sort?: string;
@@ -57,5 +59,19 @@ export class ThesisService {
 
         return this.http.get<{ data: PageResponse<ThesisResponse> }>(this.baseUrl, { params: httpParams })
             .pipe(map(r => r.data));
+    }
+
+    getThesisById(id: string): Observable<ThesisResponse> {
+        return this.http.get<{ data: ThesisResponse }>(`${this.baseUrl}/${id}`)
+            .pipe(map(r => r.data));
+    }
+
+    assignStudents(batchId: string, studentIds: string[]): Observable<void> {
+        return this.http.post<{ success: boolean }>(`${this.baseUrl}/assign`, { batchId, studentIds })
+            .pipe(map(() => { }));
+    }
+
+    deleteThesis(id: string): Observable<void> {
+        return this.http.delete(`${this.baseUrl}/${id}`).pipe(map(() => { }));
     }
 }

@@ -14,7 +14,7 @@ import { Router } from '@angular/router';
       <div class="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-gray-100">
         <div>
           <h2 class="text-2xl font-bold text-gray-900">
-            {{ isGlobal() ? 'Lịch sử hệ thống' : 'Lịch sử hoạt động' }}
+            {{ isGlobal() ? 'Lịch sử hệ thống' : 'Lịch sử cá nhân' }}
           </h2>
           <p class="text-sm text-gray-500">
             {{ isGlobal() ? 'Xem toàn bộ biến động dữ liệu trên hệ thống.' : 'Xem lại các thao tác bạn đã thực hiện gần đây.' }}
@@ -104,8 +104,8 @@ export class HistoryListComponent implements OnInit {
   isGlobal = signal(false);
 
   ngOnInit(): void {
-    const url = this.router.url;
-    this.isGlobal.set(url.includes('/pdt/history') || url.includes('/head/history'));
+    // Every history page now defaults to personal history
+    this.isGlobal.set(false);
     this.refresh();
   }
 

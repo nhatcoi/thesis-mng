@@ -14,4 +14,8 @@ public interface ThesisRepository extends JpaRepository<Thesis, UUID>, JpaSpecif
     Page<Thesis> findByBatchId(UUID batchId, Pageable pageable);
 
     long countByBatchId(UUID batchId);
+
+    boolean existsByStudentIdAndBatchId(UUID studentId, UUID batchId);
+
+    java.util.Optional<Thesis> findByStudentIdAndBatchId(UUID studentId, UUID batchId);
 }

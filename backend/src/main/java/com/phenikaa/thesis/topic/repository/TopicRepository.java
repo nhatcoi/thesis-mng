@@ -13,11 +13,11 @@ public interface TopicRepository extends JpaRepository<Topic, UUID> {
 
     List<Topic> findByBatchIdAndStatus(UUID batchId, TopicStatus status);
 
-    List<Topic> findByMajorId(UUID majorId);
+    List<Topic> findByMajorCode(String majorCode);
 
     long countByStatus(TopicStatus status);
 
-    long countByMajorId(UUID majorId);
+    long countByMajorCode(String majorCode);
 
-    long countByMajorIdAndStatus(UUID majorId, TopicStatus status);
+    long countByMajorCodeAndStatus(String majorCode, TopicStatus status);
 }

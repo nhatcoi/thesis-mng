@@ -2,7 +2,6 @@ package com.phenikaa.thesis.topic.entity;
 
 import com.phenikaa.thesis.batch.entity.ThesisBatch;
 import com.phenikaa.thesis.common.entity.BaseEntity;
-import com.phenikaa.thesis.organization.entity.Major;
 import com.phenikaa.thesis.topic.entity.enums.TopicSource;
 import com.phenikaa.thesis.topic.entity.enums.TopicStatus;
 import com.phenikaa.thesis.user.entity.User;
@@ -11,7 +10,6 @@ import jakarta.persistence.*;
 import org.hibernate.annotations.JdbcType;
 import org.hibernate.dialect.PostgreSQLEnumJdbcType;
 import lombok.*;
-
 
 @Entity
 @Table(name = "topics")
@@ -51,9 +49,8 @@ public class Topic extends BaseEntity {
     @JdbcType(PostgreSQLEnumJdbcType.class)
     private TopicStatus status;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "major_id")
-    private Major major;
+    @Column(name = "major_code", length = 20)
+    private String majorCode;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "proposed_by", nullable = false)

@@ -25,7 +25,7 @@ public class ThesisResponse {
     private UUID advisorId;
     private String advisorName;
 
-    private UUID majorId;
+    private String majorCode;
     private String majorName;
     private UUID facultyId;
     private String facultyName;

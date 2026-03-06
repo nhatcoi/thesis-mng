@@ -52,7 +52,8 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
-    public Page<UserResponse> getUsers(String search, UserRole role, UUID facultyId, UUID majorId, Pageable pageable) {
+    public Page<UserResponse> getUsers(String search, UserRole role, UUID facultyId, String majorCode,
+            Pageable pageable) {
         Specification<User> spec = (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
@@ -71,17 +72,21 @@ public class UserService {
             }
 
             if (facultyId != null) {
-                // Check in Student or Lecturer
-                Join<User, Student> studentJoin = root.join("student", jakarta.persistence.criteria.JoinType.LEFT);
-                Join<User, Lecturer> lecturerJoin = root.join("lecturer", jakarta.persistence.criteria.JoinType.LEFT);
-                predicates.add(cb.or(
-                        cb.equal(studentJoin.get("major").get("faculty").get("id"), facultyId),
-                        cb.equal(lecturerJoin.get("faculty").get("id"), facultyId)));
+                // Tạm thời comment logic faculty vì mapping thay đổi
+                /*
+                 * Join<User, Student> studentJoin = root.join("student",
+                 * jakarta.persistence.criteria.JoinType.LEFT);
+                 * Join<User, Lecturer> lecturerJoin = root.join("lecturer",
+                 * jakarta.persistence.criteria.JoinType.LEFT);
+                 * predicates.add(cb.or(
+                 * cb.equal(studentJoin.get("major").get("faculty").get("id"), facultyId),
+                 * cb.equal(lecturerJoin.get("faculty").get("id"), facultyId)));
+                 */
             }
 
-            if (majorId != null) {
+            if (majorCode != null && !majorCode.isBlank()) {
                 Join<User, Student> studentJoin = root.join("student", jakarta.persistence.criteria.JoinType.LEFT);
-                predicates.add(cb.equal(studentJoin.get("major").get("id"), majorId));
+                predicates.add(cb.equal(studentJoin.get("majorCode"), majorCode));
             }
 
             if (query.getResultType() != Long.class && query.getResultType() != long.class) {
@@ -98,7 +103,7 @@ public class UserService {
         String facultyName = null;
         String majorName = null;
         UUID userFacultyId = null;
-        UUID userMajorId = null;
+        String majorCode = null;
 
         Set<UserRole> roleCodes = user.getRoles().stream()
                 .map(Role::getCode)
@@ -106,18 +111,21 @@ public class UserService {
 
         if (roleCodes.contains(UserRole.STUDENT)) {
             Student student = studentRepository.findByUserId(user.getId()).orElse(null);
-            if (student != null && student.getMajor() != null) {
-                majorName = student.getMajor().getName();
-                userMajorId = student.getMajor().getId();
-                if (student.getMajor().getFaculty() != null) {
-                    facultyName = student.getMajor().getFaculty().getName();
-                    userFacultyId = student.getMajor().getFaculty().getId();
+            if (student != null && student.getMajorCode() != null) {
+                majorCode = student.getMajorCode();
+                Major m = majorRepository.findByCode(majorCode).orElse(null);
+                if (m != null) {
+                    majorName = m.getName();
+                    if (m.getFaculty() != null) {
+                        facultyName = m.getFaculty().getName();
+                        userFacultyId = m.getFaculty().getId();
+                    }
                 }
             }
         }
 
-        UUID managedMajorId = null;
         String managedMajorName = null;
+        String managedMajorCode = null;
 
         // Multi-role logic: search for profile if has lecturer or head role
         if (roleCodes.contains(UserRole.LECTURER) || roleCodes.contains(UserRole.DEPT_HEAD)) {
@@ -128,17 +136,10 @@ public class UserService {
                     userFacultyId = lecturer.getFaculty().getId();
                 }
                 // Correctly assign managedMajor information if code exists
-                String mCode = lecturer.getManagedMajorCode();
-                if (mCode != null && !mCode.isBlank()) {
-                    majorRepository.findByCode(mCode).ifPresent(m -> {
-                        // Using a final-assignment trick or just a direct local variable update
-                        // Since we are outside of a lambda here or we can just use the result
-                    });
-
-                    // Direct assignment search
-                    Major m = majorRepository.findByCode(mCode).orElse(null);
+                managedMajorCode = lecturer.getManagedMajorCode();
+                if (managedMajorCode != null && !managedMajorCode.isBlank()) {
+                    Major m = majorRepository.findByCode(managedMajorCode).orElse(null);
                     if (m != null) {
-                        managedMajorId = m.getId();
                         managedMajorName = m.getName();
                     }
                 }
@@ -157,9 +158,10 @@ public class UserService {
                 .facultyName(facultyName)
                 .majorName(majorName)
                 .facultyId(userFacultyId)
-                .majorId(userMajorId)
-                .managedMajorId(managedMajorId)
+                .facultyId(userFacultyId)
                 .managedMajorName(managedMajorName)
+                .majorCode(majorCode)
+                .managedMajorCode(managedMajorCode)
                 .build();
     }
 
@@ -207,14 +209,11 @@ public class UserService {
         if (request.getMajorCode() == null) {
             throw new BusinessException("Sinh viên cần có mã ngành");
         }
-        Major major = majorRepository.findByCode(request.getMajorCode())
-                .orElseThrow(() -> new BusinessException("Không tìm thấy ngành: " + request.getMajorCode()));
-
         Student student = Student.builder()
                 .user(user)
                 .studentCode(user.getUsername())
-                .major(major)
-                .cohort(request.getCohort() != null ? request.getCohort() : "N/A")
+                .majorCode(request.getMajorCode())
+                .cohort(request.getCohort())
                 .eligibleForThesis(Boolean.TRUE)
                 .build();
 

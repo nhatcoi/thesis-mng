@@ -19,8 +19,8 @@ export interface User {
   facultyName?: string;
   majorName?: string;
   facultyId?: string;
-  majorId?: string;
-  managedMajorId?: string;
+  majorCode?: string;
+  managedMajorCode?: string;
   managedMajorName?: string;
 }
 
@@ -130,8 +130,8 @@ export class AuthService {
               facultyName: me.facultyName,
               majorName: me.majorName,
               facultyId: me.facultyId,
-              majorId: me.majorId,
-              managedMajorId: me.managedMajorId,
+              majorCode: me.majorCode,
+              managedMajorCode: me.managedMajorCode,
               managedMajorName: me.managedMajorName
             });
           }

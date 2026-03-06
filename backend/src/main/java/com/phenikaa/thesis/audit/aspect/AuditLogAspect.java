@@ -32,10 +32,13 @@ public class AuditLogAspect {
             String entityType = auditable.entityType();
             UUID entityId = extractId(result, joinPoint.getArgs());
 
-            // Lấy dữ liệu mới nhất (newValue)
+            // Lấy dữ liệu (newValue)
             Map<String, Object> newValue = null;
             if (result != null && !action.contains("DELETE")) {
                 newValue = convertToMap(result);
+            } else if (joinPoint.getArgs().length > 0 && !action.contains("DELETE")) {
+                // Nếu result là null (void method), thử lấy từ tham số đầu tiên (Request DTO)
+                newValue = convertToMap(joinPoint.getArgs()[0]);
             }
 
             // Ghi nhận vào DB

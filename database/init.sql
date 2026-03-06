@@ -100,7 +100,7 @@ CREATE TABLE students (
     id                  UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id             UUID UNIQUE NOT NULL REFERENCES users(id),
     student_code        VARCHAR(20) UNIQUE NOT NULL,
-    major_id            UUID NOT NULL REFERENCES majors(id),
+    major_code          VARCHAR(20) NOT NULL,
     cohort              VARCHAR(20) NOT NULL,
     eligible_for_thesis BOOLEAN DEFAULT FALSE,
     created_at          TIMESTAMPTZ DEFAULT NOW(),
@@ -187,7 +187,8 @@ CREATE TABLE topics (
     current_students INT NOT NULL DEFAULT 0,
     source          topic_source NOT NULL DEFAULT 'LECTURER',
     status          topic_status NOT NULL DEFAULT 'AVAILABLE',
-    major_id        UUID REFERENCES majors(id),
+    major_code      VARCHAR(20),
+
 
     proposed_by     UUID NOT NULL REFERENCES users(id),
     approved_by     UUID REFERENCES users(id),
@@ -634,7 +635,11 @@ INSERT INTO lecturers (user_id, lecturer_code, faculty_id, managed_major_code) V
 ((SELECT id FROM users WHERE username = 'gv_viet'),  'GV002', (SELECT id FROM faculties WHERE code = 'HTTT'), NULL),
 ((SELECT id FROM users WHERE username = 'truongnganh'), 'GV000', (SELECT id FROM faculties WHERE code = 'HTTT'), 'KTPM');
 
-INSERT INTO students (user_id, student_code, major_id, cohort, eligible_for_thesis) VALUES
-((SELECT id FROM users WHERE username = 'sv001'), '23010887', (SELECT id FROM majors WHERE code = 'KTPM'), 'K17', TRUE),
-((SELECT id FROM users WHERE username = 'sv002'), '23010636', (SELECT id FROM majors WHERE code = 'KTPM'), 'K17', TRUE);
+INSERT INTO students (user_id, student_code, major_code, cohort, eligible_for_thesis) VALUES
+((SELECT id FROM users WHERE username = 'sv001'), '23010887', 'KTPM', 'K17', TRUE),
+((SELECT id FROM users WHERE username = 'sv002'), '23010636', 'KTPM', 'K17', TRUE);
 
+-- Seed theses
+INSERT INTO theses (student_id, batch_id, status) VALUES
+((SELECT id FROM students WHERE student_code = '23010887'), (SELECT id FROM thesis_batches WHERE name = 'T1'), 'ELIGIBLE_FOR_THESIS'),
+((SELECT id FROM students WHERE student_code = '23010636'), (SELECT id FROM thesis_batches WHERE name = 'T1'), 'ELIGIBLE_FOR_THESIS');

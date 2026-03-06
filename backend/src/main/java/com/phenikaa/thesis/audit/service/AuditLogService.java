@@ -104,6 +104,12 @@ public class AuditLogService {
             case "CREATE_ACADEMIC_YEAR" -> "Đã thêm niên khóa mới: " + name;
             case "UPDATE_ACADEMIC_YEAR" -> "Đã cập nhật niên khóa: " + name;
             case "DELETE_ACADEMIC_YEAR" -> "Đã xóa niên khóa: " + name;
+            case "ASSIGN_STUDENT" -> {
+                Object ids = data.get("studentIds");
+                int count = ids instanceof java.util.Collection ? ((java.util.Collection<?>) ids).size() : 0;
+                yield "Đã gán " + count + " sinh viên vào đợt đồ án";
+            }
+            case "UNASSIGN_STUDENT" -> "Đã gỡ sinh viên khỏi đợt đồ án (Hồ sơ ID: " + log.getEntityId() + ")";
             default ->
                 "Thao tác " + log.getAction() + " trên " + log.getEntityType() + " (ID: " + log.getEntityId() + ")";
         };

@@ -48,8 +48,8 @@ public class UserController {
             @RequestParam(required = false) String search,
             @RequestParam(required = false) UserRole role,
             @RequestParam(required = false) java.util.UUID facultyId,
-            @RequestParam(required = false) java.util.UUID majorId,
+            @RequestParam(required = false) String majorCode,
             @PageableDefault(size = 50, sort = "username") Pageable pageable) {
-        return ApiResponse.ok(userService.getUsers(search, role, facultyId, majorId, pageable));
+        return ApiResponse.ok(userService.getUsers(search, role, facultyId, majorCode, pageable));
     }
 }

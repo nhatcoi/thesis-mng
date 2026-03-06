@@ -78,10 +78,10 @@ public class AuthController {
                 .collect(java.util.stream.Collectors.toList()));
         info.put("facultyId", userDetails.getFacultyId());
         info.put("facultyName", userDetails.getFacultyName());
-        info.put("majorId", userDetails.getMajorId());
         info.put("majorName", userDetails.getMajorName());
-        info.put("managedMajorId", userDetails.getManagedMajorId());
         info.put("managedMajorName", userDetails.getManagedMajorName());
+        info.put("majorCode", userDetails.getMajorCode());
+        info.put("managedMajorCode", userDetails.getManagedMajorCode());
         info.put("roles", auth.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .filter(a -> a.startsWith("ROLE_"))

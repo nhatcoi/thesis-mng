@@ -1,9 +1,7 @@
 package com.phenikaa.thesis.user.service.importing;
 
 import com.phenikaa.thesis.organization.entity.Faculty;
-import com.phenikaa.thesis.organization.entity.Major;
 import com.phenikaa.thesis.organization.repository.FacultyRepository;
-import com.phenikaa.thesis.organization.repository.MajorRepository;
 import com.phenikaa.thesis.user.dto.importing.LecturerImportRow;
 import com.phenikaa.thesis.user.dto.importing.StudentImportRow;
 import com.phenikaa.thesis.user.entity.Lecturer;
@@ -33,15 +31,11 @@ public class UserImportRowProcessor {
         private final UserRepository userRepository;
         private final StudentRepository studentRepository;
         private final LecturerRepository lecturerRepository;
-        private final MajorRepository majorRepository;
         private final FacultyRepository facultyRepository;
         private final RoleRepository roleRepository;
 
         @Transactional(propagation = Propagation.REQUIRES_NEW)
         public void processStudentRow(StudentImportRow row) {
-                Major major = majorRepository.findByCode(row.getMajorCode())
-                                .orElseThrow(() -> new RuntimeException("Không tìm thấy ngành: " + row.getMajorCode()));
-
                 User user = saveOrUpdateUser(row.getUsername(), row.getExternalId(), row.getEmail(),
                                 row.getFirstName(), row.getLastName(), UserRole.STUDENT);
 
@@ -51,7 +45,7 @@ public class UserImportRowProcessor {
 
                 student.setUser(user);
                 student.setStudentCode(row.getUsername());
-                student.setMajor(major);
+                student.setMajorCode(row.getMajorCode());
                 student.setCohort(row.getCohort());
                 // PĐT chịu trách nhiệm lọc đủ điều kiện trước khi import
                 student.setEligibleForThesis(Boolean.TRUE);

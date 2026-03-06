@@ -43,6 +43,7 @@ export const routes: Routes = [
       { path: 'pdt/notifications', loadComponent: () => import('./features/shared/notification-list.component').then(m => m.NotificationListComponent) },
       { path: 'pdt/history', loadComponent: () => import('./features/shared/history-list.component').then(m => m.HistoryListComponent) },
       { path: 'head/students', loadComponent: () => import('./features/head/students.component').then(m => m.StudentsComponent) },
+      { path: 'head/students/thesis/:id', loadComponent: () => import('./features/head/thesis-detail.component').then(m => m.ThesisDetailComponent) },
       { path: 'head/topics', loadComponent: () => import('./features/head/topics.component').then(m => m.TopicsComponent) },
       { path: 'head/notifications', loadComponent: () => import('./features/shared/notification-list.component').then(m => m.NotificationListComponent) },
       { path: 'head/history', loadComponent: () => import('./features/shared/history-list.component').then(m => m.HistoryListComponent) },

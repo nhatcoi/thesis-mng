@@ -70,7 +70,7 @@ export class UserService {
         search?: string;
         role?: string;
         facultyId?: string;
-        majorId?: string;
+        majorCode?: string;
         sort?: string;
     }): Observable<PageResponse<any>> {
         let httpParams = new HttpParams();
@@ -79,7 +79,7 @@ export class UserService {
         if (params.search) httpParams = httpParams.set('search', params.search);
         if (params.role) httpParams = httpParams.set('role', params.role);
         if (params.facultyId) httpParams = httpParams.set('facultyId', params.facultyId);
-        if (params.majorId) httpParams = httpParams.set('majorId', params.majorId);
+        if (params.majorCode) httpParams = httpParams.set('majorCode', params.majorCode);
         if (params.sort) httpParams = httpParams.set('sort', params.sort);
 
         return this.http.get<ApiResponse<PageResponse<any>>>(this.baseUrl, { params: httpParams })

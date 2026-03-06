@@ -559,7 +559,7 @@ export class UserManagementComponent implements OnInit {
       search: this.searchQuery,
       role: this.roleFilter,
       facultyId: this.facultyFilter,
-      majorId: this.majorFilter,
+      majorCode: this.majorFilter,
       sort: `${this.sortBy()},${this.sortDir()}`
     }).subscribe({
       next: (res: PageResponse<UserResponse>) => {

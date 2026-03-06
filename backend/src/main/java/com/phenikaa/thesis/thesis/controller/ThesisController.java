@@ -21,11 +21,37 @@ public class ThesisController {
     @GetMapping
     public ApiResponse<Page<ThesisResponse>> getTheses(
             @RequestParam(required = false) UUID batchId,
-            @RequestParam(required = false) UUID majorId,
+            @RequestParam(required = false) String majorCode,
             @RequestParam(required = false) UUID facultyId,
             @RequestParam(required = false) ThesisStatus status,
             @RequestParam(required = false) String search,
+            @RequestParam(defaultValue = "false") boolean showAll,
+            @RequestParam(defaultValue = "false") boolean unassignedOnly,
             Pageable pageable) {
-        return ApiResponse.ok(thesisService.getTheses(batchId, majorId, facultyId, status, search, pageable));
+        if (unassignedOnly) {
+            return ApiResponse.ok(thesisService.getUnassignedStudents(batchId, majorCode, facultyId, search, pageable));
+        }
+        if (showAll) {
+            return ApiResponse.ok(
+                    thesisService.getStudentThesisOverviews(batchId, majorCode, facultyId, status, search, pageable));
+        }
+        return ApiResponse.ok(thesisService.getTheses(batchId, majorCode, facultyId, status, search, pageable));
+    }
+
+    @GetMapping("/{id}")
+    public ApiResponse<ThesisResponse> getThesisById(@PathVariable UUID id) {
+        return ApiResponse.ok(thesisService.getThesisById(id));
+    }
+
+    @PostMapping("/assign")
+    public ApiResponse<Void> assignStudents(@RequestBody com.phenikaa.thesis.thesis.dto.ThesisAssignRequest request) {
+        thesisService.assignStudentsToBatch(request);
+        return ApiResponse.ok();
+    }
+
+    @DeleteMapping("/{id}")
+    public ApiResponse<Void> deleteThesis(@PathVariable UUID id) {
+        thesisService.deleteThesis(id);
+        return ApiResponse.ok();
     }
 }
