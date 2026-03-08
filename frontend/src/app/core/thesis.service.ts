@@ -85,12 +85,24 @@ export class ThesisService {
         batchName: string;
         topicRegStart: string;
         topicRegEnd: string;
+        outlineStart: string;
+        outlineEnd: string;
+        thesisStatus: string;
+        thesisId: string;
+        topicTitle?: string;
+        advisorName?: string;
     } | null> {
         return this.http.get<{ data: { 
             batchId: string; 
             batchName: string;
             topicRegStart: string;
             topicRegEnd: string;
+            outlineStart: string;
+            outlineEnd: string;
+            thesisStatus: string;
+            thesisId: string;
+            topicTitle?: string;
+            advisorName?: string;
         } | null }>(`${this.baseUrl}/my-batch`)
             .pipe(map(r => r.data));
     }

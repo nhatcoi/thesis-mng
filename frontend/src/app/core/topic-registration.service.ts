@@ -15,6 +15,7 @@ export interface TopicRegistration {
     studentCode: string;
     status: 'PENDING' | 'APPROVED' | 'REJECTED';
     topicSource: 'LECTURER' | 'STUDENT';
+    preferredLecturerId?: string;
     rejectReason?: string;
     createdAt: string;
 }

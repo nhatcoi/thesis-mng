@@ -185,8 +185,21 @@ export class LayoutComponent implements OnInit {
   }
 
   goToNotifications(): void {
-    const role = this.auth.currentUser()?.activeRole?.toLowerCase();
-    const prefix = role === 'admin' || role === 'training_dept' ? 'pdt' : role;
+    const role = this.auth.currentUser()?.activeRole;
+    if (!role) return;
+
+    let prefix = '';
+    switch (role) {
+      case 'ADMIN':
+      case 'TRAINING_DEPT':
+        prefix = 'pdt';
+        break;
+      case 'DEPT_HEAD':
+        prefix = 'head';
+        break;
+      default:
+        prefix = role.toLowerCase();
+    }
     this.router.navigate([`/${prefix}/notifications`]);
   }
 

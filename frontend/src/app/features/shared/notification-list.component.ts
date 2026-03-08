@@ -113,6 +113,8 @@ export class NotificationListComponent implements OnInit {
             case 'BATCH_OPENED': return 'campaign';
             case 'TOPIC_APPROVED': return 'check_circle';
             case 'TOPIC_REJECTED': return 'cancel';
+            case 'TOPIC_REGISTERED': return 'how_to_reg';
+            case 'TOPIC_PROPOSED': return 'assignment_ind';
             case 'ADVISOR_ASSIGNED': return 'person_add';
             case 'OUTLINE_REVIEWED': return 'assignment_turned_in';
             case 'PROGRESS_REMINDER': return 'running_with_errors';
@@ -128,6 +130,8 @@ export class NotificationListComponent implements OnInit {
             case 'TOPIC_REJECTED': return 'bg-red-50';
             case 'BATCH_OPENED': return 'bg-blue-50';
             case 'PROGRESS_REMINDER': return 'bg-amber-50';
+            case 'TOPIC_REGISTERED': return 'bg-cyan-50';
+            case 'TOPIC_PROPOSED': return 'bg-purple-50';
             default: return 'bg-indigo-50';
         }
     }
@@ -138,6 +142,8 @@ export class NotificationListComponent implements OnInit {
             case 'TOPIC_REJECTED': return 'text-red-600';
             case 'BATCH_OPENED': return 'text-blue-600';
             case 'PROGRESS_REMINDER': return 'text-amber-600';
+            case 'TOPIC_REGISTERED': return 'text-cyan-600';
+            case 'TOPIC_PROPOSED': return 'text-purple-600';
             default: return 'text-indigo-600';
         }
     }
