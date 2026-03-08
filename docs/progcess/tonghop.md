@@ -94,6 +94,7 @@ GIAI ĐOẠN 1: ĐĂNG KÝ ĐỀ TÀI & THỰC HIỆN ĐỒ ÁN
 │     ├─ Lưu file đề cương gắn với hồ sơ đồ án
 │     ├─ Gán trạng thái: `OUTLINE_SUBMITTED`
 │     └─ (Có thể gửi thông báo cho giảng viên hướng dẫn) (implicit)
+|  bắn noti cho GV
 
 ├─ 6. Giảng viên duyệt đề cương
 │  ├─ Actor: Giảng viên hướng dẫn, Sinh viên, Hệ thống
@@ -111,6 +112,7 @@ GIAI ĐOẠN 1: ĐĂNG KÝ ĐỀ TÀI & THỰC HIỆN ĐỒ ÁN
 │  └─ Nghiệp vụ Hệ thống
 │     ├─ Cập nhật trạng thái `OUTLINE_APPROVED` / `OUTLINE_REJECTED`
 │     └─ Lưu toàn bộ lịch sử phiên bản đề cương (implicit tốt cho audit)
+| bắn noti cho SV
 
 ├─ 7. Sinh viên thực hiện đồ án
 │  ├─ Actor: Sinh viên, Giảng viên hướng dẫn, Hệ thống
