@@ -121,12 +121,23 @@ public class ThesisServiceImpl implements ThesisService {
         if (user == null || user.getStudent() == null) return null;
         List<Thesis> theses = thesisRepo.findByStudentIdAndBatchStatus(user.getStudent().getId(), BatchStatus.ACTIVE);
         if (theses.isEmpty()) return null;
-        ThesisBatch batch = theses.get(0).getBatch();
+        Thesis thesis = theses.get(0);
+        ThesisBatch batch = thesis.getBatch();
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("batchId", batch.getId().toString());
         result.put("batchName", batch.getName());
         result.put("topicRegStart", batch.getTopicRegStart());
         result.put("topicRegEnd", batch.getTopicRegEnd());
+        result.put("outlineStart", batch.getOutlineStart());
+        result.put("outlineEnd", batch.getOutlineEnd());
+        result.put("thesisStatus", thesis.getStatus().name());
+        result.put("thesisId", thesis.getId().toString());
+        if (thesis.getTopic() != null) {
+            result.put("topicTitle", thesis.getTopic().getTitle());
+        }
+        if (thesis.getAdvisor() != null) {
+            result.put("advisorName", thesisMapper.fullName(thesis.getAdvisor().getUser()));
+        }
         return result;
     }
 
