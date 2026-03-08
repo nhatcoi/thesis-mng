@@ -15,5 +15,7 @@ public interface LecturerRepository extends JpaRepository<Lecturer, UUID> {
 
     List<Lecturer> findByFacultyId(UUID facultyId);
 
+    List<Lecturer> findByManagedMajorCode(String managedMajorCode);
+
     long countByFacultyId(UUID facultyId);
 }

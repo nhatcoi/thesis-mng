@@ -5,6 +5,7 @@ import com.phenikaa.thesis.user.entity.Lecturer;
 import com.phenikaa.thesis.user.entity.User;
 import com.phenikaa.thesis.user.repository.LecturerRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.LinkedHashMap;
@@ -20,6 +21,7 @@ public class LecturerController {
     private final LecturerRepository lecturerRepo;
 
     @GetMapping
+    @Transactional(readOnly = true)
     public ApiResponse<List<Map<String, Object>>> getLecturers(
             @RequestParam(required = false) String search,
             @RequestParam(required = false) java.util.UUID facultyId) {

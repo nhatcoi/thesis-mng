@@ -1,7 +1,7 @@
 package com.phenikaa.thesis.topic.service;
 
 import com.phenikaa.thesis.batch.entity.ThesisBatch;
-import com.phenikaa.thesis.batch.entity.enums.BatchStatus;
+
 import com.phenikaa.thesis.common.exception.BusinessException;
 import com.phenikaa.thesis.common.exception.ResourceNotFoundException;
 import com.phenikaa.thesis.thesis.entity.Thesis;
@@ -16,6 +16,7 @@ import com.phenikaa.thesis.topic.entity.enums.RegistrationStatus;
 import com.phenikaa.thesis.topic.entity.enums.TopicSource;
 import com.phenikaa.thesis.topic.entity.enums.TopicStatus;
 import com.phenikaa.thesis.topic.mapper.TopicMapper;
+import com.phenikaa.thesis.topic.validator.TopicRegistrationValidator;
 import com.phenikaa.thesis.topic.repository.TopicRegistrationRepository;
 import com.phenikaa.thesis.topic.repository.TopicRepository;
 import com.phenikaa.thesis.batch.repository.ThesisBatchRepository;
@@ -33,8 +34,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -49,6 +52,7 @@ public class TopicRegistrationServiceImpl implements TopicRegistrationService {
     private final NotificationService notificationService;
     private final AuditLogService auditLogService;
     private final TopicMapper topicMapper;
+    private final TopicRegistrationValidator registrationValidator;
 
     @Override
     @Transactional(readOnly = true)
@@ -87,8 +91,8 @@ public class TopicRegistrationServiceImpl implements TopicRegistrationService {
                 .orElseThrow(() -> new ResourceNotFoundException("Topic", "id", topicId));
         ThesisBatch batch = topic.getBatch();
 
-        validateBatchRegistrationWindow(batch);
-        validateTopicRegistrable(topic, student);
+        registrationValidator.validateBatchRegistrationWindow(batch);
+        registrationValidator.validateTopicRegistrable(topic, student);
 
         Thesis thesis = thesisRepo.findByStudentIdAndBatchId(student.getId(), batch.getId()).orElse(null);
         if (thesis == null)
@@ -138,7 +142,7 @@ public class TopicRegistrationServiceImpl implements TopicRegistrationService {
 
         ThesisBatch batch = batchRepo.findById(req.getBatchId())
                 .orElseThrow(() -> new ResourceNotFoundException("ThesisBatch", "id", req.getBatchId()));
-        validateBatchRegistrationWindow(batch);
+        registrationValidator.validateBatchRegistrationWindow(batch);
 
         Thesis thesis = thesisRepo.findByStudentIdAndBatchId(student.getId(), batch.getId()).orElse(null);
         if (thesis == null)
@@ -175,6 +179,8 @@ public class TopicRegistrationServiceImpl implements TopicRegistrationService {
 
         Map<String, Object> logData = Map.of("title", topic.getTitle(), "batchName", batch.getName());
         auditLogService.log("PROPOSE_TOPIC", "TOPIC", topic.getId(), null, new HashMap<>(logData));
+
+        notifyLecturersOnProposal(user, student, topic, preferredLecturer);
 
         return enrichRegistrationResponse(registrationRepo.save(reg));
     }
@@ -267,34 +273,7 @@ public class TopicRegistrationServiceImpl implements TopicRegistrationService {
         return null;
     }
 
-    private void validateBatchRegistrationWindow(ThesisBatch batch) {
-        if (batch.getStatus() != BatchStatus.ACTIVE)
-            throw new BusinessException("Đợt đồ án \"" + batch.getName() + "\" hiện không hoạt động. Không thể đăng ký.");
-        OffsetDateTime now = OffsetDateTime.now();
-        if (now.isBefore(batch.getTopicRegStart()))
-            throw new BusinessException("Chưa đến thời hạn đăng ký đề tài. Đăng ký mở từ: " + batch.getTopicRegStart() + ".");
-        if (now.isAfter(batch.getTopicRegEnd()))
-            throw new BusinessException("Đã hết thời hạn đăng ký đề tài. Hạn chót là: " + batch.getTopicRegEnd() + ".");
-    }
 
-    private void validateTopicRegistrable(Topic topic, Student student) {
-        if (topic.getStatus() != TopicStatus.AVAILABLE && topic.getStatus() != TopicStatus.APPROVED) {
-            String reason = switch (topic.getStatus()) {
-                case FULL -> "Đề tài đã đủ số lượng sinh viên.";
-                case CLOSED -> "Đề tài đã đóng, không nhận đăng ký.";
-                case REJECTED -> "Đề tài đã bị từ chối, không thể đăng ký.";
-                case PENDING_APPROVAL -> "Đề tài đang chờ duyệt, chưa thể đăng ký.";
-                default -> "Đề tài không ở trạng thái cho phép đăng ký.";
-            };
-            throw new BusinessException(reason);
-        }
-        if (topic.getCurrentStudents() >= topic.getMaxStudents())
-            throw new BusinessException("Đề tài đã đủ " + topic.getMaxStudents() + " sinh viên, không còn chỗ trống.");
-        if (topic.getMajorCode() != null && !topic.getMajorCode().isBlank()
-                && !topic.getMajorCode().equals(student.getMajorCode()))
-            throw new BusinessException("Đề tài này chỉ dành cho ngành " + topic.getMajorCode()
-                    + ". Ngành của bạn (" + student.getMajorCode() + ") không phù hợp.");
-    }
 
     private void autoRejectStudentPending(Student student, ThesisBatch batch, String topicTitle) {
         List<TopicRegistration> otherPending = registrationRepo.findByStudentIdAndStatus(student.getId(), RegistrationStatus.PENDING);
@@ -317,6 +296,32 @@ public class TopicRegistrationServiceImpl implements TopicRegistrationService {
                             + ") đã đăng ký đề tài \"" + topic.getTitle() + "\". Đề tài hiện có "
                             + topic.getCurrentStudents() + "/" + topic.getMaxStudents() + " sinh viên.",
                     "TOPIC", topic.getId());
+        }
+    }
+
+    private void notifyLecturersOnProposal(User studentUser, Student student, Topic topic, Lecturer preferredLecturer) {
+        String title = "Đề xuất đề tài mới từ sinh viên";
+        String message = "Sinh viên " + topicMapper.fullName(studentUser) + " (" + student.getStudentCode()
+                + ") đã đề xuất đề tài mới: \"" + topic.getTitle() + "\".";
+
+        Set<User> recipients = new HashSet<>();
+        if (preferredLecturer != null && preferredLecturer.getUser() != null) {
+            recipients.add(preferredLecturer.getUser());
+        }
+
+        // Notify Head of Major
+        if (student.getMajorCode() != null) {
+            List<Lecturer> heads = lecturerRepo.findByManagedMajorCode(student.getMajorCode());
+            for (Lecturer head : heads) {
+                if (head.getUser() != null) {
+                    recipients.add(head.getUser());
+                }
+            }
+        }
+
+        for (User recipient : recipients) {
+            notificationService.sendNotification(recipient, NotificationType.TOPIC_PROPOSED,
+                    title, message, "TOPIC", topic.getId());
         }
     }
 
