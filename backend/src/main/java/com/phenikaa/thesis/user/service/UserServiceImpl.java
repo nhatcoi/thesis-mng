@@ -2,7 +2,7 @@ package com.phenikaa.thesis.user.service;
 
 import com.phenikaa.thesis.common.exception.BusinessException;
 import com.phenikaa.thesis.organization.entity.Faculty;
-import com.phenikaa.thesis.organization.entity.Major;
+
 import com.phenikaa.thesis.organization.repository.FacultyRepository;
 import com.phenikaa.thesis.organization.repository.MajorRepository;
 import com.phenikaa.thesis.user.dto.UserCreateRequest;

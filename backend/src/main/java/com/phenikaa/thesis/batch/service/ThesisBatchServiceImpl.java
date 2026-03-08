@@ -8,11 +8,13 @@ import com.phenikaa.thesis.batch.entity.ThesisBatch;
 import com.phenikaa.thesis.batch.entity.enums.BatchStatus;
 import com.phenikaa.thesis.batch.mapper.ThesisBatchMapper;
 import com.phenikaa.thesis.batch.repository.ThesisBatchRepository;
+import com.phenikaa.thesis.batch.validator.ThesisBatchValidator;
 import com.phenikaa.thesis.common.exception.BusinessException;
 import com.phenikaa.thesis.common.exception.ResourceNotFoundException;
 import com.phenikaa.thesis.organization.entity.AcademicYear;
 import com.phenikaa.thesis.organization.repository.AcademicYearRepository;
 import com.phenikaa.thesis.user.entity.User;
+import com.phenikaa.thesis.user.entity.enums.UserRole;
 import com.phenikaa.thesis.user.repository.UserRepository;
 import com.phenikaa.thesis.audit.annotation.Auditable;
 import com.phenikaa.thesis.notification.entity.enums.NotificationType;
@@ -25,9 +27,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.persistence.criteria.Predicate;
-import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -40,13 +43,14 @@ public class ThesisBatchServiceImpl implements ThesisBatchService {
     private final CurrentUserService currentUserService;
     private final NotificationService notificationService;
     private final ThesisBatchMapper batchMapper;
+    private final ThesisBatchValidator batchValidator;
 
     @Override
     @Transactional
     @Auditable(action = "CREATE_BATCH", entityType = "ThesisBatch")
     public ThesisBatchResponse createBatch(ThesisBatchCreateRequest req) {
         AcademicYear ay = findAcademicYear(req.academicYearId());
-        validateDateRanges(req.topicRegStart(), req.topicRegEnd(),
+        batchValidator.validateDateRanges(req.topicRegStart(), req.topicRegEnd(),
                 req.outlineStart(), req.outlineEnd(),
                 req.implementationStart(), req.implementationEnd(),
                 req.defenseRegStart(), req.defenseRegEnd(),
@@ -66,13 +70,13 @@ public class ThesisBatchServiceImpl implements ThesisBatchService {
                 .defenseStart(req.defenseStart()).defenseEnd(req.defenseEnd())
                 .build();
 
-        return toResponse(batchRepo.save(batch));
+        return batchMapper.toResponse(batchRepo.save(batch));
     }
 
     @Override
     @Transactional(readOnly = true)
     public ThesisBatchResponse getBatch(UUID id) {
-        return toResponse(findBatch(id));
+        return batchMapper.toResponse(findBatch(id));
     }
 
     @Override
@@ -89,7 +93,7 @@ public class ThesisBatchServiceImpl implements ThesisBatchService {
             }
             return cb.and(predicates.toArray(new Predicate[0]));
         };
-        return batchRepo.findAll(spec, pageable).map(this::toResponse);
+        return batchRepo.findAll(spec, pageable).map(batchMapper::toResponse);
     }
 
     @Override
@@ -101,7 +105,7 @@ public class ThesisBatchServiceImpl implements ThesisBatchService {
             throw new BusinessException("Chỉ được sửa đợt đồ án ở trạng thái DRAFT");
 
         AcademicYear ay = findAcademicYear(req.academicYearId());
-        validateDateRanges(req.topicRegStart(), req.topicRegEnd(),
+        batchValidator.validateDateRanges(req.topicRegStart(), req.topicRegEnd(),
                 req.outlineStart(), req.outlineEnd(),
                 req.implementationStart(), req.implementationEnd(),
                 req.defenseRegStart(), req.defenseRegEnd(),
@@ -114,7 +118,7 @@ public class ThesisBatchServiceImpl implements ThesisBatchService {
         batch.setDefenseRegStart(req.defenseRegStart()); batch.setDefenseRegEnd(req.defenseRegEnd());
         batch.setDefenseStart(req.defenseStart()); batch.setDefenseEnd(req.defenseEnd());
 
-        return toResponse(batchRepo.save(batch));
+        return batchMapper.toResponse(batchRepo.save(batch));
     }
 
     @Override
@@ -127,11 +131,8 @@ public class ThesisBatchServiceImpl implements ThesisBatchService {
 
         batch.setStatus(BatchStatus.ACTIVE);
         ThesisBatch saved = batchRepo.save(batch);
-        notificationService.sendNotification(saved.getCreatedBy(), NotificationType.BATCH_OPENED,
-                "Đợt đồ án mới đã mở",
-                "Đợt đồ án '" + saved.getName() + "' đã được kích hoạt.",
-                "ThesisBatch", saved.getId());
-        return toResponse(saved);
+        notifyBatchOpened(saved);
+        return batchMapper.toResponse(saved);
     }
 
     @Override
@@ -142,7 +143,7 @@ public class ThesisBatchServiceImpl implements ThesisBatchService {
         if (batch.getStatus() != BatchStatus.ACTIVE)
             throw new BusinessException("Chỉ đóng được đợt ở trạng thái ACTIVE (hiện tại: " + batch.getStatus() + ")");
         batch.setStatus(BatchStatus.CLOSED);
-        return toResponse(batchRepo.save(batch));
+        return batchMapper.toResponse(batchRepo.save(batch));
     }
 
     @Override
@@ -155,6 +156,18 @@ public class ThesisBatchServiceImpl implements ThesisBatchService {
         batchRepo.delete(batch);
     }
 
+    private void notifyBatchOpened(ThesisBatch batch) {
+        Set<User> recipients = new HashSet<>();
+        recipients.addAll(userRepo.findByRoles_Code(UserRole.LECTURER));
+        recipients.addAll(userRepo.findByRoles_Code(UserRole.DEPT_HEAD));
+        String title = "Đợt đồ án mới đã mở";
+        String message = "Đợt đồ án '" + batch.getName() + "' đã được kích hoạt. Giảng viên có thể bắt đầu tạo đề tài.";
+        for (User recipient : recipients) {
+            notificationService.sendNotification(recipient, NotificationType.BATCH_OPENED,
+                    title, message, "ThesisBatch", batch.getId());
+        }
+    }
+
     private ThesisBatch findBatch(UUID id) {
         return batchRepo.findById(id).orElseThrow(() -> new ResourceNotFoundException("ThesisBatch", "id", id));
     }
@@ -163,36 +176,4 @@ public class ThesisBatchServiceImpl implements ThesisBatchService {
         return academicYearRepo.findById(id).orElseThrow(() -> new ResourceNotFoundException("AcademicYear", "id", id));
     }
 
-    private ThesisBatchResponse toResponse(ThesisBatch b) {
-        ThesisBatchResponse base = batchMapper.toResponse(b);
-        User creator = b.getCreatedBy();
-        String creatorName = creator != null ? (creator.getLastName() + " " + creator.getFirstName()).trim() : null;
-        return new ThesisBatchResponse(base.id(), base.name(), base.academicYearId(), base.academicYearName(),
-                base.semester(), base.status(), base.createdById(), creatorName,
-                base.topicRegStart(), base.topicRegEnd(), base.outlineStart(), base.outlineEnd(),
-                base.implementationStart(), base.implementationEnd(), base.defenseRegStart(), base.defenseRegEnd(),
-                base.defenseStart(), base.defenseEnd(), base.createdAt(), base.updatedAt());
-    }
-
-    private void validateDateRanges(OffsetDateTime topicRegStart, OffsetDateTime topicRegEnd,
-            OffsetDateTime outlineStart, OffsetDateTime outlineEnd,
-            OffsetDateTime implStart, OffsetDateTime implEnd,
-            OffsetDateTime defRegStart, OffsetDateTime defRegEnd,
-            OffsetDateTime defStart, OffsetDateTime defEnd) {
-        assertBefore(topicRegStart, topicRegEnd, "Thời gian bắt đầu ĐK đề tài phải trước thời gian kết thúc");
-        assertBefore(outlineStart, outlineEnd, "Thời gian bắt đầu đề cương phải trước thời gian kết thúc");
-        assertBefore(implStart, implEnd, "Thời gian bắt đầu thực hiện phải trước thời gian kết thúc");
-        assertBefore(defRegStart, defRegEnd, "Thời gian bắt đầu ĐK bảo vệ phải trước thời gian kết thúc");
-        assertBefore(topicRegEnd, outlineStart, "Giai đoạn ĐK đề tài phải kết thúc trước khi bắt đầu đề cương");
-        assertBefore(outlineEnd, implStart, "Giai đoạn đề cương phải kết thúc trước khi bắt đầu thực hiện");
-        assertBefore(implEnd, defRegStart, "Giai đoạn thực hiện phải kết thúc trước khi bắt đầu ĐK bảo vệ");
-        if (defStart != null && defEnd != null) {
-            assertBefore(defStart, defEnd, "Thời gian bắt đầu bảo vệ phải trước thời gian kết thúc");
-            assertBefore(defRegEnd, defStart, "Giai đoạn ĐK bảo vệ phải kết thúc trước khi bắt đầu bảo vệ");
-        }
-    }
-
-    private void assertBefore(OffsetDateTime from, OffsetDateTime to, String message) {
-        if (from != null && to != null && !from.isBefore(to)) throw new BusinessException(message);
-    }
 }

@@ -5,6 +5,7 @@ import com.phenikaa.thesis.common.exception.ResourceNotFoundException;
 import com.phenikaa.thesis.organization.dto.AcademicYearRequest;
 import com.phenikaa.thesis.organization.entity.AcademicYear;
 import com.phenikaa.thesis.organization.repository.AcademicYearRepository;
+import com.phenikaa.thesis.organization.validator.AcademicYearValidator;
 import com.phenikaa.thesis.batch.repository.ThesisBatchRepository;
 import com.phenikaa.thesis.audit.annotation.Auditable;
 import lombok.RequiredArgsConstructor;
@@ -12,7 +13,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -22,6 +22,7 @@ public class AcademicYearServiceImpl implements AcademicYearService {
 
     private final AcademicYearRepository repo;
     private final ThesisBatchRepository batchRepo;
+    private final AcademicYearValidator academicYearValidator;
 
     @Override
     @Transactional(readOnly = true)
@@ -39,7 +40,7 @@ public class AcademicYearServiceImpl implements AcademicYearService {
     @Transactional
     @Auditable(action = "CREATE_ACADEMIC_YEAR", entityType = "AcademicYear")
     public AcademicYear create(AcademicYearRequest req) {
-        validateDates(req.startDate(), req.endDate());
+        academicYearValidator.validateDates(req.startDate(), req.endDate());
         return repo.save(AcademicYear.builder().name(req.name()).startDate(req.startDate()).endDate(req.endDate()).build());
     }
 
@@ -48,7 +49,7 @@ public class AcademicYearServiceImpl implements AcademicYearService {
     @Auditable(action = "UPDATE_ACADEMIC_YEAR", entityType = "AcademicYear")
     public AcademicYear update(UUID id, AcademicYearRequest req) {
         AcademicYear ay = getById(id);
-        validateDates(req.startDate(), req.endDate());
+        academicYearValidator.validateDates(req.startDate(), req.endDate());
         ay.setName(req.name()); ay.setStartDate(req.startDate()); ay.setEndDate(req.endDate());
         return repo.save(ay);
     }
@@ -61,10 +62,5 @@ public class AcademicYearServiceImpl implements AcademicYearService {
         if (!batchRepo.findByAcademicYearId(id).isEmpty())
             throw new BusinessException("Không thể xóa niên khóa đã được sử dụng trong đợt đồ án");
         repo.delete(ay);
-    }
-
-    private void validateDates(LocalDate start, LocalDate end) {
-        if (start != null && end != null && !start.isBefore(end))
-            throw new BusinessException("Ngày bắt đầu phải trước ngày kết thúc niên khóa");
     }
 }
