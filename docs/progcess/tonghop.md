@@ -57,16 +57,12 @@ GIAI ĐOẠN 1: ĐĂNG KÝ ĐỀ TÀI & THỰC HIỆN ĐỒ ÁN
 │  ├─ Trường hợp 1: Chọn đề tài có sẵn
 │  │  ├─ Nghiệp vụ Sinh viên
 │  │  │  ├─ Xem danh sách đề tài `AVAILABLE`
-│  │  │  └─ Gửi yêu cầu đăng ký đề tài
-│  │  ├─ Nghiệp vụ Hệ thống
-│  │  │  ├─ Gán trạng thái sinh viên: `TOPIC_PENDING_APPROVAL`
-│  │  │  └─ Gửi yêu cầu đến giảng viên sở hữu đề tài
-│  │  └─ Nghiệp vụ Giảng viên
-│  │     ├─ Xem danh sách yêu cầu sinh viên
-│  │     ├─ Quyết định:
-│  │     │  ├─ Đồng ý → set `TOPIC_APPROVED`, gán sinh viên vào đề tài
-│  │     │  └─ Từ chối → set `TOPIC_REJECTED`
-│  │     └─ (Có thể ưu tiên sinh viên theo tiêu chí riêng: điểm, CV…) (implicit)
+│  │  │  └─ Đăng ký đề tài (ai đăng ký trước được ưu tiên)
+│  │  └─ Nghiệp vụ Hệ thống
+│  │     ├─ Kiểm tra đề tài còn slot, trong thời hạn đăng ký
+│  │     ├─ Gán ngay sinh viên vào đề tài (không chờ duyệt)
+│  │     ├─ Gán trạng thái `TOPIC_ASSIGNED`, gán GVHD từ đề tài
+│  │     └─ Tự động hủy các đăng ký PENDING khác của sinh viên trong cùng đợt
 │  └─ Trường hợp 2: Sinh viên đề xuất đề tài mới
 │     ├─ Nhánh 2.1: Có đề xuất giảng viên
 │     │  ├─ Nghiệp vụ Sinh viên
