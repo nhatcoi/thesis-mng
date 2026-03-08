@@ -206,9 +206,11 @@ public class TopicRegistrationServiceImpl implements TopicRegistrationService {
 
         if (req.getStatus() == RegistrationStatus.APPROVED) {
             processApproval(reg, user, req);
+            notifyOnApproval(reg, req);
         } else if (req.getStatus() == RegistrationStatus.REJECTED) {
             reg.setStatus(RegistrationStatus.REJECTED);
             reg.setRejectReason(req.getRejectReason());
+            notifyStudentOnRejection(reg, req.getRejectReason());
         } else {
             throw new BusinessException("Trạng thái không hợp lệ. Chỉ chấp nhận APPROVED hoặc REJECTED.");
         }
@@ -339,5 +341,37 @@ public class TopicRegistrationServiceImpl implements TopicRegistrationService {
         if (reg.getPreferredLecturer() != null)
             return topicMapper.fullName(reg.getPreferredLecturer().getUser());
         return null;
+    }
+
+    private void notifyOnApproval(TopicRegistration reg, RegistrationApprovalRequest req) {
+        Topic topic = reg.getTopic();
+        Student student = reg.getStudent();
+        String topicTitle = topic.getTitle();
+
+        // 1. Notify student — topic approved
+        notificationService.sendNotification(student.getUser(), NotificationType.TOPIC_APPROVED,
+                "Đề tài được duyệt",
+                "Đề tài \"" + topicTitle + "\" của bạn đã được Trưởng ngành phê duyệt.",
+                "TOPIC", topic.getId());
+
+        // 2. Notify advisor — assigned to guide this student
+        Lecturer advisor = resolveAdvisor(req.getAdvisorId(), topic);
+        if (advisor != null && advisor.getUser() != null) {
+            notificationService.sendNotification(advisor.getUser(), NotificationType.ADVISOR_ASSIGNED,
+                    "Phân công hướng dẫn đề tài",
+                    "Bạn được phân công hướng dẫn sinh viên " + topicMapper.fullName(student.getUser())
+                            + " (" + student.getStudentCode() + ") cho đề tài \"" + topicTitle + "\".",
+                    "TOPIC", topic.getId());
+        }
+    }
+
+    private void notifyStudentOnRejection(TopicRegistration reg, String reason) {
+        Topic topic = reg.getTopic();
+        String message = "Đề tài \"" + topic.getTitle() + "\" của bạn đã bị từ chối.";
+        if (reason != null && !reason.isBlank()) {
+            message += " Lý do: " + reason;
+        }
+        notificationService.sendNotification(reg.getStudent().getUser(), NotificationType.TOPIC_REJECTED,
+                "Đề tài bị từ chối", message, "TOPIC", topic.getId());
     }
 }

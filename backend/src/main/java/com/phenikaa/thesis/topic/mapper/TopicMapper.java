@@ -28,6 +28,7 @@ public interface TopicMapper {
     @Mapping(target = "studentId", source = "student.id")
     @Mapping(target = "studentCode", source = "student.studentCode")
     @Mapping(target = "studentName", source = "student.user", qualifiedByName = "fullName")
+    @Mapping(target = "preferredLecturerId", source = "preferredLecturer.id")
     @Mapping(target = "advisorName", ignore = true) // complex logic in service
     TopicRegistrationResponse toRegistrationResponse(TopicRegistration reg);
 

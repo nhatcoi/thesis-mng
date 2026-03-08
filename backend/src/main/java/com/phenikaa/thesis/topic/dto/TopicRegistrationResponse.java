@@ -22,6 +22,7 @@ public class TopicRegistrationResponse {
     private String studentName;
     private String studentCode;
     private RegistrationStatus status;
+    private UUID preferredLecturerId;
     private String rejectReason;
     private OffsetDateTime createdAt;
 }
