@@ -4,9 +4,6 @@ import java.time.OffsetDateTime;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * DTO đại diện cho một bản ghi lịch sử thao tác để trả về cho Frontend.
- */
 public record AuditLogResponse(
                 UUID id,
                 UUID userId,

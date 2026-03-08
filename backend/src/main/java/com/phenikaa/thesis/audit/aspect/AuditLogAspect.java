@@ -11,7 +11,6 @@ import org.aspectj.lang.annotation.AfterReturning;
 import org.aspectj.lang.annotation.Aspect;
 import org.springframework.stereotype.Component;
 
-import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
@@ -32,80 +31,53 @@ public class AuditLogAspect {
             String entityType = auditable.entityType();
             UUID entityId = extractId(result, joinPoint.getArgs());
 
-            // Lấy dữ liệu (newValue)
             Map<String, Object> newValue = null;
             if (result != null && !action.contains("DELETE")) {
                 newValue = convertToMap(result);
             } else if (joinPoint.getArgs().length > 0 && !action.contains("DELETE")) {
-                // Nếu result là null (void method), thử lấy từ tham số đầu tiên (Request DTO)
                 newValue = convertToMap(joinPoint.getArgs()[0]);
             }
 
-            // Ghi nhận vào DB
             auditLogService.log(action, entityType, entityId, null, newValue);
-
-            log.debug("AOP Audit recorded: {} -> {} (ID: {})", action, entityType, entityId);
+            log.debug("Audit: {} -> {} (ID: {})", action, entityType, entityId);
         } catch (Exception e) {
-            log.error("AuditLog AOP failure in method {}: {}", joinPoint.getSignature().getName(), e.getMessage());
+            log.error("AuditLog AOP failure in {}: {}", joinPoint.getSignature().getName(), e.getMessage());
         }
     }
 
     private UUID extractId(Object result, Object[] args) {
-        // 1. Thử lấy từ kết quả trả về
         if (result != null) {
             UUID id = tryGetId(result);
-            if (id != null)
-                return id;
+            if (id != null) return id;
         }
-
-        // 2. Thử lấy từ tham số đầu vào (thường là ID truyền vào để update/delete)
         for (Object arg : args) {
-            if (arg instanceof UUID uuid)
-                return uuid;
-            // Nếu tham số là một String có thể là UUID
+            if (arg instanceof UUID uuid) return uuid;
             if (arg instanceof String s) {
-                try {
-                    return UUID.fromString(s);
-                } catch (Exception ignored) {
-                }
+                try { return UUID.fromString(s); } catch (Exception ignored) {}
             }
         }
-
         return null;
     }
 
     private UUID tryGetId(Object obj) {
-        if (obj == null)
-            return null;
-
-        // Cách 1: Thử gọi getId() qua Reflection
+        if (obj == null) return null;
+        // Try getId() — standard JPA entity
         try {
-            Method getIdMethod = obj.getClass().getMethod("getId");
-            Object res = getIdMethod.invoke(obj);
-            if (res instanceof UUID uuid)
-                return uuid;
-        } catch (Exception ignored) {
-        }
-
-        // Cách 2: Với Records (Spring Boot 3 / Java 21)
+            Object res = obj.getClass().getMethod("getId").invoke(obj);
+            if (res instanceof UUID uuid) return uuid;
+        } catch (Exception ignored) {}
+        // Try id() — Java record
         try {
-            Method idMethod = obj.getClass().getMethod("id");
-            Object res = idMethod.invoke(obj);
-            if (res instanceof UUID uuid)
-                return uuid;
-        } catch (Exception ignored) {
-        }
-
+            Object res = obj.getClass().getMethod("id").invoke(obj);
+            if (res instanceof UUID uuid) return uuid;
+        } catch (Exception ignored) {}
         return null;
     }
 
     private Map<String, Object> convertToMap(Object obj) {
-        if (obj == null)
-            return null;
+        if (obj == null) return null;
         try {
-            // ObjectMapper xử lý tốt cả Entity và Record
-            return objectMapper.convertValue(obj, new TypeReference<Map<String, Object>>() {
-            });
+            return objectMapper.convertValue(obj, new TypeReference<>() {});
         } catch (Exception e) {
             return Collections.singletonMap("summary", obj.toString());
         }

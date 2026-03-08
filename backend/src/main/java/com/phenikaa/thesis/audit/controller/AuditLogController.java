@@ -23,7 +23,6 @@ public class AuditLogController {
 
     @GetMapping("/global")
     public ApiResponse<List<AuditLogResponse>> getGlobalHistory() {
-        // Lấy lịch sử toàn hệ thống
         return ApiResponse.ok(auditLogService.getGlobalHistory());
     }
 }
