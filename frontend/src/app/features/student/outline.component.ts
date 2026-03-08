@@ -56,6 +56,19 @@ import { OutlineService, OutlineResponse } from '../../core/outline.service';
             <p class="text-xs text-gray-500 mt-1">Liên hệ phòng đào tạo để được gán vào đợt đồ án.</p>
           </div>
         </div>
+      } @else if (isOutlineApproved()) {
+        <div class="app-card !p-5">
+          <div class="flex items-center gap-3 mb-3">
+            <mat-icon class="!text-emerald-500 !text-[20px]">check_circle</mat-icon>
+            <span class="text-sm font-bold text-gray-900">Đề cương đã được duyệt</span>
+          </div>
+          @if (topicTitle()) {
+            <p class="text-xs text-gray-500">Đề tài: <strong class="text-gray-900">{{ topicTitle() }}</strong></p>
+          }
+          @if (advisorName()) {
+            <p class="text-xs text-gray-500 mt-0.5">GVHD: <strong class="text-gray-900">{{ advisorName() }}</strong></p>
+          }
+        </div>
       } @else if (!canSubmit()) {
         <!-- Cannot submit yet -->
         <div class="app-card">
@@ -147,52 +160,52 @@ import { OutlineService, OutlineResponse } from '../../core/outline.service';
             </div>
           </div>
         </div>
+        }
 
-        <!-- History -->
-        @if (outlines().length > 0) {
-          <div class="app-card !p-0 overflow-hidden">
-            <div class="p-6 lg:p-8 pb-2">
-              <h3 class="text-sm font-black text-gray-900 uppercase tracking-tight flex items-center gap-2">
-                <mat-icon class="!text-gray-400 !text-[18px]">history</mat-icon>
-                Lịch sử nộp đề cương
-              </h3>
-            </div>
-            <div class="divide-y divide-gray-50">
-              @for (o of outlines(); track o.id) {
-                <div class="px-6 lg:px-8 py-4 flex items-center gap-4 hover:bg-gray-50/50 transition-colors">
-                  <div class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-                    [class]="o.status === 'APPROVED' ? 'bg-emerald-50' : o.status === 'REJECTED' ? 'bg-red-50' : 'bg-amber-50'">
-                    <mat-icon [class]="o.status === 'APPROVED' ? '!text-emerald-500' : o.status === 'REJECTED' ? '!text-red-500' : '!text-amber-500'"
-                      class="!text-[18px]">
-                      {{ o.status === 'APPROVED' ? 'check_circle' : o.status === 'REJECTED' ? 'cancel' : 'schedule' }}
-                    </mat-icon>
+      <!-- History — always show when outlines exist -->
+      @if (!loading() && outlines().length > 0) {
+        <div class="app-card !p-0 overflow-hidden">
+          <div class="p-6 lg:p-8 pb-2">
+            <h3 class="text-sm font-black text-gray-900 uppercase tracking-tight flex items-center gap-2">
+              <mat-icon class="!text-gray-400 !text-[18px]">history</mat-icon>
+              Lịch sử nộp đề cương
+            </h3>
+          </div>
+          <div class="divide-y divide-gray-50">
+            @for (o of outlines(); track o.id) {
+              <div class="px-6 lg:px-8 py-4 flex items-center justify-between hover:bg-gray-50/50 transition-colors">
+                <div class="flex items-center gap-4 min-w-0">
+                  <div class="w-2 h-2 rounded-full shrink-0"
+                    [class]="o.status === 'APPROVED' ? 'bg-emerald-500' : o.status === 'REJECTED' ? 'bg-red-500' : 'bg-amber-500'">
                   </div>
-                  <div class="flex-grow min-w-0">
-                    <div class="flex items-center gap-2 mb-0.5">
-                      <span class="text-xs font-bold text-gray-900">Phiên bản {{ o.version }}</span>
-                      <span class="app-badge !text-[9px] !px-1.5 !py-0.5"
-                        [class]="o.status === 'APPROVED' ? '!bg-emerald-50 !text-emerald-600 !border-emerald-100' : o.status === 'REJECTED' ? '!bg-red-50 !text-red-600 !border-red-100' : '!bg-amber-50 !text-amber-600 !border-amber-100'">
-                        {{ o.status === 'SUBMITTED' ? 'Chờ duyệt' : o.status === 'APPROVED' ? 'Đã duyệt' : 'Bị từ chối' }}
-                      </span>
+                  <div class="min-w-0">
+                    <div class="flex items-center gap-2">
+                       <span class="text-xs font-black text-gray-900">v{{ o.version }}</span>
+                       <a [href]="outlineService.getFileUrl(o.publicUrl)" target="_blank"
+                          class="text-xs text-indigo-600 hover:text-indigo-800 font-bold underline decoration-indigo-200 underline-offset-4 truncate">
+                         {{ o.fileName }}
+                       </a>
                     </div>
-                    <p class="text-[10px] text-gray-400 truncate">{{ o.fileName }}</p>
                     @if (o.reviewerComment) {
-                      <p class="text-[10px] text-gray-500 mt-1 italic bg-gray-50 px-2 py-1 rounded">
-                        💬 {{ o.reviewerComment }}
-                      </p>
-                    }
-                  </div>
-                  <div class="text-right shrink-0">
-                    <p class="text-[10px] text-gray-400 font-mono">{{ o.submittedAt | date:'dd/MM HH:mm' }}</p>
-                    @if (o.reviewerName) {
-                      <p class="text-[9px] text-gray-400 mt-0.5">GV: {{ o.reviewerName }}</p>
+                      <div class="mt-1 flex gap-1.5 items-start">
+                        <span class="text-[10px] text-gray-400 mt-0.5 shrink-0">💬</span>
+                        <p class="text-[10px] text-gray-500 italic">{{ o.reviewerComment }}</p>
+                      </div>
                     }
                   </div>
                 </div>
-              }
-            </div>
+
+                <div class="text-right shrink-0">
+                   <p class="text-[10px] font-black uppercase tracking-widest"
+                     [class]="o.status === 'APPROVED' ? 'text-emerald-600' : o.status === 'REJECTED' ? 'text-red-600' : 'text-amber-600'">
+                     {{ o.status === 'SUBMITTED' ? 'Chờ duyệt' : o.status === 'APPROVED' ? 'Đã duyệt' : 'Bị từ chối' }}
+                   </p>
+                   <p class="text-[9px] text-gray-400 font-mono mt-0.5">{{ o.submittedAt | date:'dd/MM/yyyy HH:mm' }}</p>
+                </div>
+              </div>
+            }
           </div>
-        }
+        </div>
       }
     </div>
   `,
@@ -222,7 +235,7 @@ import { OutlineService, OutlineResponse } from '../../core/outline.service';
 })
 export class OutlineComponent implements OnInit {
   private thesisService = inject(ThesisService);
-  private outlineService = inject(OutlineService);
+  public outlineService = inject(OutlineService);
   private snackBar = inject(MatSnackBar);
 
   loading = signal(true);
@@ -260,6 +273,10 @@ export class OutlineComponent implements OnInit {
     this.outlineService.getMyOutlines().subscribe({
       next: (data) => this.outlines.set(data)
     });
+  }
+
+  isOutlineApproved(): boolean {
+    return this.thesisStatus() === 'OUTLINE_APPROVED';
   }
 
   canSubmit(): boolean {

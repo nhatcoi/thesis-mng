@@ -14,12 +14,20 @@ export interface OutlineResponse {
     reviewerName?: string;
     reviewedAt?: string;
     submittedAt: string;
+    studentName?: string;
+    studentCode?: string;
+    topicTitle?: string;
+    publicUrl?: string;
 }
 
 @Injectable({ providedIn: 'root' })
 export class OutlineService {
     private http = inject(HttpClient);
     private baseUrl = `${environment.apiUrl}/outlines`;
+
+    getFileUrl(publicUrl?: string): string {
+        return publicUrl || '#';
+    }
 
     submitOutline(file: File): Observable<OutlineResponse> {
         const formData = new FormData();
@@ -30,6 +38,16 @@ export class OutlineService {
 
     getMyOutlines(): Observable<OutlineResponse[]> {
         return this.http.get<{ data: OutlineResponse[] }>(`${this.baseUrl}/me`)
+            .pipe(map(r => r.data));
+    }
+
+    getAdvisingOutlines(): Observable<OutlineResponse[]> {
+        return this.http.get<{ data: OutlineResponse[] }>(`${this.baseUrl}/advising`)
+            .pipe(map(r => r.data));
+    }
+
+    reviewOutline(id: string, status: string, comment?: string): Observable<OutlineResponse> {
+        return this.http.patch<{ data: OutlineResponse }>(`${this.baseUrl}/${id}/review`, { status, comment })
             .pipe(map(r => r.data));
     }
 }
