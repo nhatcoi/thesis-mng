@@ -20,7 +20,7 @@ import { StudentProposalDialogComponent } from './student-proposal-dialog.compon
         <div>
           <h2 class="app-title">
             @if (myBatchId()) {
-              Bạn đang trong đợt làm ĐATN: <span class="text-indigo-600">{{ myBatchName() }}</span>
+              Đăng ký đề tài — <span class="text-indigo-600">{{ myBatchName() }}</span>
             } @else {
               Đăng ký đề tài
             }

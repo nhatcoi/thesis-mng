@@ -132,6 +132,8 @@ export class NotificationListComponent implements OnInit {
             case 'PROGRESS_REMINDER': return 'bg-amber-50';
             case 'TOPIC_REGISTERED': return 'bg-cyan-50';
             case 'TOPIC_PROPOSED': return 'bg-purple-50';
+            case 'ADVISOR_ASSIGNED': return 'bg-teal-50';
+            case 'OUTLINE_REVIEWED': return 'bg-orange-50';
             default: return 'bg-indigo-50';
         }
     }
@@ -144,6 +146,8 @@ export class NotificationListComponent implements OnInit {
             case 'PROGRESS_REMINDER': return 'text-amber-600';
             case 'TOPIC_REGISTERED': return 'text-cyan-600';
             case 'TOPIC_PROPOSED': return 'text-purple-600';
+            case 'ADVISOR_ASSIGNED': return 'text-teal-600';
+            case 'OUTLINE_REVIEWED': return 'text-orange-600';
             default: return 'text-indigo-600';
         }
     }
