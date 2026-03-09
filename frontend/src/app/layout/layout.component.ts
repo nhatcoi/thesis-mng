@@ -27,6 +27,7 @@ function isGroup(entry: MenuEntry): entry is MenuGroup {
 
 const MENU_MAP: Record<string, MenuEntry[]> = {
   ADMIN: [
+    { path: '/profile', label: 'Thông tin cá nhân', icon: 'person', exact: false },
     { path: '/pdt/users', label: 'Quản lý người dùng', icon: 'people', exact: false },
     { path: '/pdt/batches', label: 'Quản lý đợt đồ án', icon: 'date_range', exact: false },
     { path: '/pdt/academic-years', label: 'Quản lý niên khóa', icon: 'calendar_today', exact: false },
@@ -34,6 +35,7 @@ const MENU_MAP: Record<string, MenuEntry[]> = {
     { path: '/pdt/history', label: 'Lịch sử hệ thống', icon: 'history', exact: false },
   ],
   TRAINING_DEPT: [
+    { path: '/profile', label: 'Thông tin cá nhân', icon: 'person', exact: false },
     { path: '/pdt/users', label: 'Quản lý người dùng', icon: 'people', exact: false },
     { path: '/pdt/batches', label: 'Quản lý đợt đồ án', icon: 'date_range', exact: false },
     { path: '/pdt/academic-years', label: 'Quản lý niên khóa', icon: 'calendar_today', exact: false },
@@ -41,12 +43,14 @@ const MENU_MAP: Record<string, MenuEntry[]> = {
     { path: '/pdt/history', label: 'Lịch sử hệ thống', icon: 'history', exact: false },
   ],
   DEPT_HEAD: [
+    { path: '/profile', label: 'Thông tin cá nhân', icon: 'person', exact: false },
     { path: '/head/students', label: 'DS Sinh viên', icon: 'people', exact: false },
     { path: '/head/topics', label: 'Đề tài đề xuất', icon: 'assignment', exact: false },
     { path: '/head/notifications', label: 'Thông báo', icon: 'notifications', exact: false },
     { path: '/head/history', label: 'Lịch sử của tôi', icon: 'history', exact: false },
   ],
   LECTURER: [
+    { path: '/profile', label: 'Thông tin cá nhân', icon: 'person', exact: false },
     {
       title: 'Đăng ký & thực hiện ĐA',
       icon: 'auto_stories',
@@ -62,6 +66,7 @@ const MENU_MAP: Record<string, MenuEntry[]> = {
     { path: '/lecturer/history', label: 'Lịch sử của tôi', icon: 'history', exact: false },
   ],
   STUDENT: [
+    { path: '/profile', label: 'Thông tin cá nhân', icon: 'person', exact: false },
     {
       title: 'Đăng ký & thực hiện ĐA',
       icon: 'auto_stories',
@@ -84,24 +89,38 @@ const MENU_MAP: Record<string, MenuEntry[]> = {
   template: `
     <div class="flex h-screen bg-white">
       <!-- Sidebar -->
-      <aside class="w-64 bg-gray-50/50 border-r border-gray-100 flex flex-col animate-in slide-in-from-left-2 duration-300">
-        <div class="h-16 flex items-center px-6 border-b border-gray-100 gap-2">
-          <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-indigo-100">
+      <aside [class.w-64]="!collapsed()" [class.w-20]="collapsed()"
+        class="bg-gray-50/50 border-r border-gray-100 flex flex-col transition-all duration-300 ease-in-out relative group/sidebar">
+        
+        <!-- Toggle button pinned to border -->
+        <button (click)="toggleSidebar()"
+          class="absolute -right-3 top-20 w-6 h-6 bg-white border border-gray-100 rounded-full flex items-center justify-center shadow-sm z-50 hover:bg-gray-50 transition-colors">
+          <mat-icon class="!text-[14px] !w-3.5 !h-3.5 text-gray-400 transition-transform duration-300"
+            [class.rotate-180]="collapsed()">chevron_left</mat-icon>
+        </button>
+
+        <div class="h-16 flex items-center px-6 border-b border-gray-100 gap-2 shrink-0">
+          <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-indigo-100 shrink-0">
             <mat-icon class="!text-lg">school</mat-icon>
           </div>
-          <div class="flex flex-col">
-            <span class="text-xs font-black text-gray-900 uppercase tracking-widest leading-none">ThesisMgr</span>
-            <span class="text-[9px] font-bold text-indigo-500 uppercase tracking-tighter italic">Quản lý Đồ án</span>
-          </div>
+          @if (!collapsed()) {
+            <div class="flex flex-col animate-in fade-in duration-300">
+              <span class="text-xs font-black text-gray-900 uppercase tracking-widest leading-none">ThesisMgr</span>
+              <span class="text-[9px] font-bold text-indigo-500 uppercase tracking-tighter italic">Quản lý Đồ án</span>
+            </div>
+          }
         </div>
         
         <nav class="flex-1 overflow-y-auto py-6 px-4 space-y-1 scrollbar-hide">
           <!-- Dashboard (always first) -->
           <a routerLink="/dashboard" routerLinkActive="!bg-white !text-indigo-600 shadow-sm border-indigo-100"
              [routerLinkActiveOptions]="{exact: true}"
-             class="flex items-center px-3 py-2 text-[12px] font-bold rounded-lg text-gray-500 hover:bg-white hover:text-indigo-600 border border-transparent transition-all group">
-            <mat-icon class="mr-3 !text-lg text-gray-300 group-hover:text-indigo-400">dashboard</mat-icon>
-            Dashboard
+             class="flex items-center px-3 py-2 text-[12px] font-bold rounded-lg text-gray-500 hover:bg-white hover:text-indigo-600 border border-transparent transition-all group overflow-hidden"
+             [title]="collapsed() ? 'Dashboard' : ''">
+            <mat-icon class="mr-3 !text-lg text-gray-300 group-hover:text-indigo-400 shrink-0">dashboard</mat-icon>
+            @if (!collapsed()) {
+              <span class="truncate animate-in fade-in slide-in-from-left-2 duration-300">Dashboard</span>
+            }
           </a>
 
           @for (entry of menuEntries(); track $index) {
@@ -109,22 +128,27 @@ const MENU_MAP: Record<string, MenuEntry[]> = {
               <!-- Group header -->
               <div class="pt-3">
                 <button (click)="toggleGroup(entry.title)"
-                  class="w-full flex items-center justify-between px-3 py-1.5 rounded-lg hover:bg-gray-100/80 transition-all group cursor-pointer">
-                  <div class="flex items-center gap-2">
-                    <mat-icon class="!text-[14px] !w-4 !h-4 text-indigo-400">{{ entry.icon }}</mat-icon>
-                    <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest">{{ entry.title }}</span>
+                  class="w-full flex items-center justify-between px-3 py-1.5 rounded-lg hover:bg-gray-100/80 transition-all group cursor-pointer overflow-hidden"
+                  [title]="collapsed() ? entry.title : ''">
+                  <div class="flex items-center gap-2 min-w-0">
+                    <mat-icon class="!text-[14px] !w-4 !h-4 text-indigo-400 shrink-0">{{ entry.icon }}</mat-icon>
+                    @if (!collapsed()) {
+                      <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest truncate animate-in fade-in duration-300">{{ entry.title }}</span>
+                    }
                   </div>
-                  <mat-icon class="!text-[16px] !w-4 !h-4 text-gray-300 transition-transform duration-200"
-                    [class.rotate-180]="isGroupOpen(entry.title)">expand_more</mat-icon>
+                  @if (!collapsed()) {
+                    <mat-icon class="!text-[16px] !w-4 !h-4 text-gray-300 transition-transform duration-200 shrink-0"
+                      [class.rotate-180]="isGroupOpen(entry.title)">expand_more</mat-icon>
+                  }
                 </button>
-                @if (isGroupOpen(entry.title)) {
-                  <div class="mt-1 space-y-0.5 pl-1 border-l-2 border-indigo-100 ml-4">
+                @if (isGroupOpen(entry.title) && !collapsed()) {
+                  <div class="mt-1 space-y-0.5 pl-1 border-l-2 border-indigo-100 ml-4 animate-in slide-in-from-top-1 duration-200">
                     @for (item of entry.items; track item.path) {
                       <a [routerLink]="item.path" routerLinkActive="!bg-white !text-indigo-600 shadow-sm border-indigo-100"
                          [routerLinkActiveOptions]="{exact: item.exact}"
                          class="flex items-center px-3 py-1.5 text-[11px] font-bold rounded-lg text-gray-500 hover:bg-white hover:text-indigo-600 border border-transparent transition-all group">
-                        <mat-icon class="mr-2.5 !text-base text-gray-300 group-hover:text-indigo-400">{{item.icon}}</mat-icon>
-                        {{item.label}}
+                        <mat-icon class="mr-2.5 !text-base text-gray-300 group-hover:text-indigo-400 shrink-0">{{item.icon}}</mat-icon>
+                        <span class="truncate">{{item.label}}</span>
                       </a>
                     }
                   </div>
@@ -134,30 +158,41 @@ const MENU_MAP: Record<string, MenuEntry[]> = {
               <!-- Single item -->
               <a [routerLink]="entry.path" routerLinkActive="!bg-white !text-indigo-600 shadow-sm border-indigo-100"
                  [routerLinkActiveOptions]="{exact: entry.exact}"
-                 class="flex items-center px-3 py-2 text-[12px] font-bold rounded-lg text-gray-500 hover:bg-white hover:text-indigo-600 border border-transparent transition-all group">
-                <mat-icon class="mr-3 !text-lg text-gray-300 group-hover:text-indigo-400">{{entry.icon}}</mat-icon>
-                {{entry.label}}
+                 class="flex items-center px-3 py-2 text-[12px] font-bold rounded-lg text-gray-500 hover:bg-white hover:text-indigo-600 border border-transparent transition-all group overflow-hidden"
+                 [title]="collapsed() ? entry.label : ''">
+                <mat-icon class="mr-3 !text-lg text-gray-300 group-hover:text-indigo-400 shrink-0">{{entry.icon}}</mat-icon>
+                @if (!collapsed()) {
+                  <span class="truncate animate-in fade-in slide-in-from-left-2 duration-300">{{entry.label}}</span>
+                }
               </a>
             }
           }
         </nav>
         
         <!-- Profile Section -->
-        <div class="p-4 border-t border-gray-100 bg-white/50 m-2 rounded-xl border border-gray-100 shadow-sm">
+        <div class="p-4 border-t border-gray-100 bg-white/50 m-2 rounded-xl border border-gray-100 shadow-sm shrink-0">
           <div class="flex items-center gap-3">
-             <div class="w-9 h-9 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-xs ring-2 ring-indigo-50 shadow-md">
+             <div class="w-9 h-9 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-xs ring-2 ring-indigo-50 shadow-md shrink-0">
                {{auth.currentUser()?.name?.charAt(0) ?? '?'}}
              </div>
-             <div class="min-w-0">
-               <p class="text-[11px] font-black text-gray-900 truncate tracking-tight">{{auth.currentUser()?.name}}</p>
-               <p class="text-[9px] text-indigo-500 font-bold italic uppercase tracking-tighter">{{activeRoleLabel()}}</p>
-             </div>
+             @if (!collapsed()) {
+               <div class="min-w-0 animate-in fade-in duration-300">
+                 <p class="text-[11px] font-black text-gray-900 truncate tracking-tight">{{auth.currentUser()?.name}}</p>
+                 <p class="text-[9px] text-indigo-500 font-bold italic uppercase tracking-tighter">{{activeRoleLabel()}}</p>
+               </div>
+             }
           </div>
-          <button (click)="logout()"
-            class="mt-4 w-full flex items-center justify-center gap-2 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all border border-transparent hover:border-red-100">
-            <mat-icon class="!text-sm">power_settings_new</mat-icon>
-            Đăng xuất
-          </button>
+          @if (!collapsed()) {
+            <button (click)="logout()"
+              class="mt-4 w-full flex items-center justify-center gap-2 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all border border-transparent hover:border-red-100 animate-in fade-in duration-300">
+              <mat-icon class="!text-sm">power_settings_new</mat-icon>
+              Đăng xuất
+            </button>
+          } @else {
+            <button (click)="logout()" class="mt-4 w-9 h-9 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all mx-auto" title="Đăng xuất">
+              <mat-icon class="!text-sm">power_settings_new</mat-icon>
+            </button>
+          }
         </div>
       </aside>
 
@@ -214,6 +249,7 @@ export class LayoutComponent implements OnInit {
   notificationService = inject(NotificationService);
   private router = inject(Router);
 
+  collapsed = signal(false);
   openGroups = signal<Set<string>>(new Set(['Đăng ký & thực hiện ĐA']));
 
   ngOnInit(): void {
@@ -221,6 +257,10 @@ export class LayoutComponent implements OnInit {
       this.notificationService.loadUnreadCount();
       this.notificationService.connectWebSocket();
     }
+  }
+
+  toggleSidebar(): void {
+    this.collapsed.set(!this.collapsed());
   }
 
   menuEntries(): MenuEntry[] {
@@ -233,6 +273,11 @@ export class LayoutComponent implements OnInit {
   }
 
   toggleGroup(title: string): void {
+    if (this.collapsed()) {
+      this.collapsed.set(false);
+      this.openGroups.set(new Set([title]));
+      return;
+    }
     const current = new Set(this.openGroups());
     if (current.has(title)) {
       current.delete(title);
@@ -243,7 +288,7 @@ export class LayoutComponent implements OnInit {
   }
 
   isGroupOpen(title: string): boolean {
-    return this.openGroups().has(title);
+    return !this.collapsed() && this.openGroups().has(title);
   }
 
   activeRoleLabel(): string {

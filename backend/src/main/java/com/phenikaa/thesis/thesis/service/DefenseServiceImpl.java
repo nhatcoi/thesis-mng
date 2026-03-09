@@ -49,9 +49,9 @@ public class DefenseServiceImpl implements DefenseService {
                 .stream().findFirst()
                 .orElseThrow(() -> new BusinessException("Bạn chưa tham gia đợt đồ án nào."));
 
-        // Validate status — must be IN_PROGRESS
-        if (thesis.getStatus() != ThesisStatus.IN_PROGRESS)
-            throw new BusinessException("Đồ án chưa ở trạng thái thực hiện. Trạng thái: " + thesis.getStatus());
+        // Validate status — must be IN_PROGRESS or DEFENSE_REJECTED (resubmission)
+        if (thesis.getStatus() != ThesisStatus.IN_PROGRESS && thesis.getStatus() != ThesisStatus.DEFENSE_REJECTED)
+            throw new BusinessException("Đồ án chưa ở trạng thái thực hiện hoặc đã hoàn thành. Trạng thái: " + thesis.getStatus());
 
         // Validate defense registration period
         ThesisBatch batch = thesis.getBatch();

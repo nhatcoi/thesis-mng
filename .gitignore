@@ -21,3 +21,15 @@ backend/target/
 .env
 *.env
 !*.env.example
+
+# Uploaded files
+backend/uploads/
+uploads/
+node_modules/
+dist/
+.angular/
+.java-version
+.factorypath
+.project
+.classpath
+.settings/
