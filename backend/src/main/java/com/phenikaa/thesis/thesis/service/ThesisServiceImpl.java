@@ -130,6 +130,8 @@ public class ThesisServiceImpl implements ThesisService {
         result.put("topicRegEnd", batch.getTopicRegEnd());
         result.put("outlineStart", batch.getOutlineStart());
         result.put("outlineEnd", batch.getOutlineEnd());
+        result.put("implementationStart", batch.getImplementationStart());
+        result.put("implementationEnd", batch.getImplementationEnd());
         result.put("thesisStatus", thesis.getStatus().name());
         result.put("thesisId", thesis.getId().toString());
         if (thesis.getTopic() != null) {
