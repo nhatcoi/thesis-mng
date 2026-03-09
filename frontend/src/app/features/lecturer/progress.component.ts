@@ -1,78 +1,98 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
-import { ThesisService, ThesisResponse, ThesisStatus } from '../../core/thesis.service';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { ProgressService, ProgressUpdateResponse } from '../../core/progress.service';
 
 @Component({
   selector: 'app-lecturer-progress',
   standalone: true,
-  imports: [CommonModule, MatIconModule],
+  imports: [CommonModule, MatIconModule, MatSnackBarModule],
   template: `
-    <div class="space-y-6">
-      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-        <div>
-          <h2 class="text-2xl font-bold text-gray-900">Sinh viên đang hướng dẫn</h2>
-          <p class="text-sm text-gray-500 mt-1">Theo dõi tiến độ thực hiện đồ án của các sinh viên bạn phụ trách.</p>
-        </div>
+    <div class="space-y-6 max-w-5xl mx-auto">
+      <div class="app-section-header">
+        <h2 class="app-title">Theo dõi tiến độ sinh viên</h2>
+        <p class="app-subtitle">Xem và nhận xét tiến độ thực hiện đồ án.</p>
       </div>
 
       @if (loading()) {
         <div class="flex justify-center py-12">
           <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
         </div>
-      } @else if (theses().length === 0) {
-        <div class="bg-white rounded-2xl border-2 border-dashed border-gray-100 p-12 text-center">
-          <div class="bg-indigo-50 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <mat-icon class="text-indigo-600">assignment_ind</mat-icon>
-          </div>
-          <h3 class="text-lg font-bold text-gray-900">Chưa có sinh viên nào</h3>
-          <p class="text-gray-500 mt-2 max-w-xs mx-auto">Danh sách sinh viên bạn hướng dẫn sẽ xuất hiện sau khi các yêu cầu đăng ký được duyệt.</p>
+      } @else if (updates().length === 0) {
+        <div class="app-card p-12 text-center">
+          <mat-icon class="!text-gray-300 !text-[32px]">trending_up</mat-icon>
+          <h3 class="text-sm font-bold text-gray-900 mt-2">Chưa có cập nhật tiến độ</h3>
         </div>
       } @else {
-        <div class="grid grid-cols-1 gap-4">
-          @for (thesis of theses(); track thesis.id) {
-            <div class="bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-lg transition-all group">
-              <div class="flex flex-col md:flex-row justify-between gap-6">
-                <div class="flex items-start gap-4">
-                  <div class="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600 font-bold shrink-0">
-                    {{ thesis.studentName.substring(0, 1) }}
-                  </div>
-                  <div>
-                    <h3 class="text-lg font-bold text-gray-900 group-hover:text-indigo-600 transition-colors">
-                      {{ thesis.studentName }}
-                    </h3>
-                    <div class="flex items-center gap-3 mt-1">
-                      <span class="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded-lg">{{ thesis.studentCode }}</span>
-                      <span class="text-xs font-medium text-gray-500">{{ thesis.majorName }}</span>
-                    </div>
-                    <div class="mt-4 flex items-center gap-2">
-                       <span [class]="getStatusClass(thesis.status)" 
-                        class="px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider">
-                        {{ getStatusLabel(thesis.status) }}
-                      </span>
-                      <span class="text-[10px] font-bold text-gray-400 uppercase tracking-tighter bg-gray-50 px-2 py-1 rounded-lg">
-                        {{ thesis.batchName }}
-                      </span>
-                    </div>
-                  </div>
-                </div>
+        <!-- Filter tabs -->
+        <div class="flex gap-2">
+          @for (tab of tabs; track tab.value) {
+            <button (click)="activeTab.set(tab.value)"
+              class="px-3 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all"
+              [class]="activeTab() === tab.value
+                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100'
+                : 'bg-white text-gray-500 border border-gray-200 hover:bg-gray-50'">
+              {{ tab.label }} ({{ countByStatus(tab.value) }})
+            </button>
+          }
+        </div>
 
-                <div class="flex-grow max-w-xl">
-                  <div class="p-4 bg-gray-50/50 rounded-2xl border border-gray-100 h-full">
-                    <p class="text-xs font-bold text-gray-400 uppercase mb-2">Đề tài đang thực hiện</p>
-                    <p class="text-sm font-bold text-gray-900 leading-snug">{{ thesis.topicName }}</p>
-                  </div>
+        <div class="grid gap-4">
+          @for (u of filteredUpdates(); track u.id) {
+            <div class="app-card !p-5 space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="w-2 h-2 rounded-full"
+                    [class]="u.status === 'REVIEWED' ? 'bg-emerald-500' : u.status === 'NEEDS_REVISION' ? 'bg-amber-500' : 'bg-blue-500'"></div>
+                  <span class="text-xs font-bold text-gray-900">Tuần {{ u.weekNumber }} · {{ u.title }}</span>
+                  <span class="text-[10px] font-bold uppercase tracking-widest"
+                    [class]="u.status === 'REVIEWED' ? 'text-emerald-600' : u.status === 'NEEDS_REVISION' ? 'text-amber-600' : 'text-blue-600'">
+                    {{ u.status === 'SUBMITTED' ? 'Chờ nhận xét' : u.status === 'REVIEWED' ? 'Đã nhận xét' : 'Cần bổ sung' }}
+                  </span>
                 </div>
-
-                <div class="flex flex-col justify-center items-end gap-2 shrink-0">
-                  <button class="w-full md:w-auto px-4 py-2 bg-white border border-gray-200 hover:border-indigo-600 hover:text-indigo-600 text-gray-600 text-sm font-bold rounded-xl transition-all flex items-center justify-center">
-                    <mat-icon class="mr-1.5 !text-lg">visibility</mat-icon> Xem chi tiết
-                  </button>
-                  <button class="w-full md:w-auto px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 text-sm font-bold rounded-xl transition-all flex items-center justify-center">
-                    <mat-icon class="mr-1.5 !text-lg">chat_bubble_outline</mat-icon> Nhận xét
-                  </button>
-                </div>
+                <span class="text-[9px] text-gray-400 font-mono">{{ u.submittedAt | date:'dd/MM/yyyy HH:mm' }}</span>
               </div>
+
+              <div class="text-xs text-indigo-600 font-bold flex items-center gap-1.5">
+                <mat-icon class="!w-4 !h-4 !text-[14px]">account_circle</mat-icon>
+                {{ u.studentName }} ({{ u.studentCode }}) · {{ u.topicTitle }}
+              </div>
+
+              @if (u.description) {
+                <p class="text-xs text-gray-500">{{ u.description }}</p>
+              }
+
+              @if (u.fileName) {
+                <a [href]="progressService.getFileUrl(u.publicUrl)" target="_blank"
+                  class="text-xs text-indigo-600 hover:text-indigo-800 font-bold underline decoration-indigo-200 underline-offset-4 inline-block">
+                  📎 {{ u.fileName }}
+                </a>
+              }
+
+              @if (u.reviewerComment) {
+                <div class="flex gap-1.5 items-start bg-gray-50 rounded-lg px-3 py-2">
+                  <span class="text-[10px] text-gray-400 shrink-0">💬</span>
+                  <p class="text-[10px] text-gray-500 italic">{{ u.reviewerComment }}</p>
+                </div>
+              }
+
+              @if (u.status === 'SUBMITTED') {
+                <div class="pt-2 border-t border-gray-100 space-y-2">
+                  <textarea [id]="'comment-' + u.id" rows="2" placeholder="Nhận xét..."
+                    class="app-select w-full !text-xs resize-none"></textarea>
+                  <div class="flex gap-2">
+                    <button (click)="review(u, 'REVIEWED')" [disabled]="processingId() === u.id"
+                      class="app-btn-primary !py-1.5 font-bold text-[10px]">
+                      <mat-icon class="!text-sm">check</mat-icon> Đạt
+                    </button>
+                    <button (click)="review(u, 'NEEDS_REVISION')" [disabled]="processingId() === u.id"
+                      class="app-btn-ghost !text-amber-600 hover:!bg-amber-50 !py-1.5 font-bold text-[10px]">
+                      <mat-icon class="!text-sm">edit</mat-icon> Cần bổ sung
+                    </button>
+                  </div>
+                </div>
+              }
             </div>
           }
         </div>
@@ -81,47 +101,60 @@ import { ThesisService, ThesisResponse, ThesisStatus } from '../../core/thesis.s
   `
 })
 export class ProgressComponent implements OnInit {
-  private thesisService = inject(ThesisService);
+  public progressService = inject(ProgressService);
+  private snackBar = inject(MatSnackBar);
 
-  theses = signal<ThesisResponse[]>([]);
+  updates = signal<ProgressUpdateResponse[]>([]);
   loading = signal(true);
+  processingId = signal<string | null>(null);
+  activeTab = signal('ALL');
+
+  tabs = [
+    { value: 'ALL', label: 'Tất cả' },
+    { value: 'SUBMITTED', label: 'Chờ nhận xét' },
+    { value: 'REVIEWED', label: 'Đã nhận xét' },
+    { value: 'NEEDS_REVISION', label: 'Cần bổ sung' }
+  ];
 
   ngOnInit(): void {
-    this.loadTheses();
+    this.loadUpdates();
   }
 
-  loadTheses(): void {
+  loadUpdates(): void {
     this.loading.set(true);
-    this.thesisService.getAdvisingTheses().subscribe({
-      next: (data) => {
-        this.theses.set(data);
-        this.loading.set(false);
-      },
+    this.progressService.getAdvisingProgress().subscribe({
+      next: (data) => { this.updates.set(data); this.loading.set(false); },
       error: () => this.loading.set(false)
     });
   }
 
-  getStatusLabel(status: string): string {
-    switch (status) {
-      case 'ELIGIBLE_FOR_THESIS': return 'Mới giao';
-      case 'IN_PROGRESS': return 'Đang thực hiện';
-      case 'OUTLINE_SUBMITTED': return 'Đã nộp đề cương';
-      case 'OUTLINE_APPROVED': return 'Đã duyệt đề cương';
-      case 'READY_FOR_DEFENSE': return 'Sẵn sàng bảo vệ';
-      case 'GRADED': return 'Đã chấm điểm';
-      case 'COMPLETED': return 'Hoàn thành';
-      default: return status;
-    }
+  countByStatus(status: string): number {
+    if (status === 'ALL') return this.updates().length;
+    return this.updates().filter(u => u.status === status).length;
   }
 
-  getStatusClass(status: string): string {
-    switch (status) {
-      case 'IN_PROGRESS': return 'bg-blue-50 text-blue-600 border border-blue-100';
-      case 'OUTLINE_SUBMITTED': return 'bg-amber-50 text-amber-600 border border-amber-100';
-      case 'OUTLINE_APPROVED': return 'bg-indigo-50 text-indigo-600 border border-indigo-100';
-      case 'READY_FOR_DEFENSE': return 'bg-emerald-50 text-emerald-600 border border-emerald-100';
-      case 'COMPLETED': return 'bg-gray-50 text-gray-500 border border-gray-100';
-      default: return 'bg-gray-50 text-gray-600';
+  filteredUpdates(): ProgressUpdateResponse[] {
+    if (this.activeTab() === 'ALL') return this.updates();
+    return this.updates().filter(u => u.status === this.activeTab());
+  }
+
+  review(u: ProgressUpdateResponse, status: string): void {
+    const comment = (document.getElementById('comment-' + u.id) as HTMLTextAreaElement)?.value?.trim() || '';
+    if (status === 'NEEDS_REVISION' && !comment) {
+      this.snackBar.open('Vui lòng nhập nhận xét khi yêu cầu bổ sung', 'Đóng', { duration: 3000 });
+      return;
     }
+    this.processingId.set(u.id);
+    this.progressService.reviewProgress(u.id, status, comment).subscribe({
+      next: () => {
+        this.snackBar.open('Đã nhận xét tiến độ', 'Đóng', { duration: 3000 });
+        this.processingId.set(null);
+        this.loadUpdates();
+      },
+      error: (err: any) => {
+        this.snackBar.open(err.error?.message || 'Có lỗi xảy ra', 'Đóng', { duration: 3000 });
+        this.processingId.set(null);
+      }
+    });
   }
 }
