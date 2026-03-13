@@ -22,6 +22,15 @@ import org.springframework.security.oauth2.server.resource.introspection.NimbusO
 import org.springframework.security.oauth2.server.resource.introspection.OpaqueTokenIntrospector;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.cache.CacheManager;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.cache.Cache;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
+import org.springframework.web.client.RestTemplate;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
+import java.time.Duration;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.*;
@@ -35,6 +44,7 @@ public class SecurityConfig {
     static final String ROLES_CLAIM = "urn:zitadel:iam:org:project:roles";
 
     private final CorsConfigurationSource corsConfigurationSource;
+    private final CacheManager cacheManager;
 
     @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}")
     private String issuerUri;
@@ -45,8 +55,9 @@ public class SecurityConfig {
     @Value("${zitadel.introspection.client-secret}")
     private String introspectionClientSecret;
 
-    public SecurityConfig(CorsConfigurationSource corsConfigurationSource) {
+    public SecurityConfig(CorsConfigurationSource corsConfigurationSource, @Lazy CacheManager cacheManager) {
         this.corsConfigurationSource = corsConfigurationSource;
+        this.cacheManager = cacheManager;
     }
 
     private static final String[] PUBLIC_PATHS = {
@@ -109,11 +120,36 @@ public class SecurityConfig {
 
     private AuthenticationManager opaqueAuthManager() {
         String introspectUri = issuerUri + "/oauth/v2/introspect";
+        
+        // --- OPTIMIZATION: Pooled RestTemplate for Introspection ---
+        PoolingHttpClientConnectionManager connectionManager = new PoolingHttpClientConnectionManager();
+        connectionManager.setMaxTotal(50);
+        connectionManager.setDefaultMaxPerRoute(20);
+
+        CloseableHttpClient httpClient = HttpClients.custom()
+                .setConnectionManager(connectionManager)
+                .build();
+
+        HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory(httpClient);
+        factory.setConnectTimeout(Duration.ofSeconds(2));
+        factory.setConnectionRequestTimeout(Duration.ofSeconds(2));
+        
+        RestTemplate restTemplate = new RestTemplate(factory);
+        // Add basic auth for Zitadel introspection
+        restTemplate.getInterceptors().add((request, body, execution) -> {
+            String auth = introspectionClientId + ":" + introspectionClientSecret;
+            String encodedAuth = Base64.getEncoder().encodeToString(auth.getBytes());
+            request.getHeaders().add("Authorization", "Basic " + encodedAuth);
+            return execution.execute(request, body);
+        });
+        
         NimbusOpaqueTokenIntrospector delegate = new NimbusOpaqueTokenIntrospector(
-                introspectUri, introspectionClientId, introspectionClientSecret);
+                introspectUri, restTemplate);
+
+        OpaqueTokenIntrospector cachedDelegate = new CachedIntrospector(delegate, cacheManager);
 
         OpaqueTokenIntrospector withRoles = token -> {
-            OAuth2AuthenticatedPrincipal p = delegate.introspect(token);
+            OAuth2AuthenticatedPrincipal p = cachedDelegate.introspect(token);
             Collection<GrantedAuthority> authorities = extractAuthorities(p.getAttribute(ROLES_CLAIM));
             return new DefaultOAuth2AuthenticatedPrincipal(
                     p.getName(), p.getAttributes(), authorities);
@@ -122,7 +158,6 @@ public class SecurityConfig {
         return new ProviderManager(new OpaqueTokenAuthenticationProvider(withRoles));
     }
 
-    @SuppressWarnings("unchecked")
     private static Collection<GrantedAuthority> extractAuthorities(Object rolesObj) {
         if (!(rolesObj instanceof Map<?, ?> roles) || roles.isEmpty()) {
             return Collections.emptyList();
@@ -130,5 +165,36 @@ public class SecurityConfig {
         return roles.keySet().stream()
                 .map(k -> new SimpleGrantedAuthority("ROLE_" + k.toString().toUpperCase()))
                 .collect(Collectors.toList());
+    }
+
+    private static class CachedIntrospector implements OpaqueTokenIntrospector {
+        private final OpaqueTokenIntrospector delegate;
+        private final Cache cache;
+        private final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(CachedIntrospector.class);
+
+        CachedIntrospector(OpaqueTokenIntrospector delegate, CacheManager cacheManager) {
+            this.delegate = delegate;
+            this.cache = cacheManager.getCache("introspections");
+        }
+
+        @Override
+        public OAuth2AuthenticatedPrincipal introspect(String token) {
+            if (cache != null) {
+                OAuth2AuthenticatedPrincipal cached = cache.get(token, OAuth2AuthenticatedPrincipal.class);
+                if (cached != null) {
+                    return cached;
+                }
+            }
+
+            long start = System.currentTimeMillis();
+            OAuth2AuthenticatedPrincipal principal = delegate.introspect(token);
+            long duration = System.currentTimeMillis() - start;
+            log.debug("Opaque token introspected in {}ms", duration);
+
+            if (cache != null && principal != null) {
+                cache.put(token, principal);
+            }
+            return principal;
+        }
     }
 }

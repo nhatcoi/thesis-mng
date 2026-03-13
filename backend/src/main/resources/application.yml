@@ -16,6 +16,16 @@ spring:
       max-file-size: 10MB
       max-request-size: 10MB
 
+  # ---- Caching (Caffeine) ----
+  cache:
+    type: caffeine
+    cache-names:
+      - majors
+      - faculties
+      - batches
+    caffeine:
+      spec: expireAfterWrite=60m,maximumSize=500
+
   # ---- JPA / Hibernate (common) ----
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect

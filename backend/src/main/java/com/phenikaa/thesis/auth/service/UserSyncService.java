@@ -9,6 +9,7 @@ import java.time.OffsetDateTime;
 import java.util.Map;
 
 @Service
+@lombok.extern.slf4j.Slf4j
 public class UserSyncService {
 
     private final UserRepository userRepository;
@@ -18,11 +19,13 @@ public class UserSyncService {
     }
 
     @Transactional
+    @org.springframework.cache.annotation.Cacheable(value = "users", key = "#claims.get('sub')", unless = "#result == null")
     public User syncFromClaims(Map<String, Object> claims) {
+        log.debug("==> [DB Lookup] Authenticating and syncing user from DB for sub: {}", claims.get("sub"));
         String sub = str(claims, "sub");
         String email = str(claims, "email");
         final String givenName = str(claims, "given_name") != null ? str(claims, "given_name") : "";
-        final String familyName = str(claims, "family_name") != null ? str(claims, "family_name") : "";
+        final String familyName =FamilyName(claims);
         final String username = str(claims, "preferred_username") != null
                 ? str(claims, "preferred_username")
                 : email;
@@ -33,17 +36,45 @@ public class UserSyncService {
                 .orElse(null);
 
         if (user == null) {
-            return null; // Let the caller decide how to handle missing user (e.g. blocking login)
+            return null;
         }
 
+        // --- OPTIMIZATION: Skip save if no critical data changed and sync was recent ---
+        boolean needsUpdate = false;
+        
+        // 1. Check external ID mapping
         if (user.getExternalId() == null) {
             user.setExternalId(sub);
+            needsUpdate = true;
         }
-        user.setFirstName(givenName);
-        user.setLastName(familyName);
-        user.setLastLoginAt(OffsetDateTime.now());
 
-        return userRepository.save(user);
+        // 2. Sync basic info if changed
+        if (!givenName.equals(user.getFirstName())) {
+            user.setFirstName(givenName);
+            needsUpdate = true;
+        }
+        if (!familyName.equals(user.getLastName())) {
+            user.setLastName(familyName);
+            needsUpdate = true;
+        }
+
+        // 3. Update lastLoginAt only if it's been more than 1 hour since last update
+        // to avoid excessive DB writes on every API call.
+        OffsetDateTime now = OffsetDateTime.now();
+        if (user.getLastLoginAt() == null || user.getLastLoginAt().isBefore(now.minusHours(1))) {
+            user.setLastLoginAt(now);
+            needsUpdate = true;
+        }
+
+        if (needsUpdate) {
+            return userRepository.save(user);
+        }
+
+        return user;
+    }
+
+    private String FamilyName(Map<String, Object> claims) {
+        return str(claims, "family_name") != null ? str(claims, "family_name") : "";
     }
 
     private static String str(Map<String, Object> m, String key) {
