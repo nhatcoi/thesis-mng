@@ -5,7 +5,7 @@ server:
 spring:
   # ---- DataSource (Local PostgreSQL) ----
   datasource:
-    url: jdbc:postgresql://localhost:5432/thesis_management
+    url: jdbc:postgresql://127.0.0.1:5432/thesis_management
     username: sad_admin
     password: sad_secret_2026
     driver-class-name: org.postgresql.Driver
@@ -26,7 +26,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: https://sso.openpka.site
+          issuer-uri: http://localhost:18080
 
 # ---- Zitadel introspection (Local) ----
 zitadel:
