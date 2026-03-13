@@ -1,0 +1,116 @@
+@startuml ThesisHub - Use Case Diagram
+!theme plain
+skinparam actorStyle awesome
+skinparam packageStyle rectangle
+skinparam useCase {
+  ArrowColor Black
+}
+
+title Hệ thống Quản lý Đồ án Tốt nghiệp (ThesisHub)\nUse Case Diagram - Chuẩn UML
+
+left to right direction
+
+' ============ ACTORS ============
+actor "Phòng Đào tạo\n(PĐT)" as PDT #LightBlue
+actor "Trưởng ngành" as HEAD #LightBlue
+actor "Giảng viên" as GV #LightGreen
+actor "Sinh viên" as SV #LightYellow
+actor "Thư ký\nHội đồng" as SEC #LightCoral
+actor "Chủ tịch\nHội đồng" as CHAIR #LightCoral
+
+GV <|-- SEC : generalization
+GV <|-- CHAIR : generalization
+
+' External System
+actor "Hệ thống SSO\n(Zitadel)" as SSO <<External System>> #LightGray
+
+' ============ PACKAGES ============
+rectangle "1. Xác thực" as PAuth #White {
+  usecase (UC-1.1 Đăng nhập) as UC11
+  usecase (UC-1.2 Đăng xuất) as UC12
+}
+
+rectangle "2. Thiết lập đợt & danh sách" as P2a #White {
+  usecase (UC-2.1 Khởi tạo đợt đồ án) as UC21
+  usecase (UC-2.2 Lập danh sách SV) as UC22
+}
+
+rectangle "3. Quản lý đề tài" as P3a #White {
+  usecase (UC-3.1 GV đăng ký đề tài) as UC31
+  usecase (UC-3.2 SV chọn/đề xuất đề tài) as UC32
+}
+
+rectangle "4. Đề cương & Tiến độ" as P4 #White {
+  usecase (UC-4.1 SV nộp đề cương) as UC41
+  usecase (UC-4.2 GV duyệt đề cương) as UC42
+  usecase (UC-4.3 SV cập nhật tiến độ) as UC43
+  usecase (UC-4.4 GV theo dõi tiến độ) as UC44
+}
+
+rectangle "5. Đăng ký bảo vệ" as P5 #White {
+  usecase (UC-5.1 SV đăng ký bảo vệ) as UC51
+  usecase (UC-5.2 GV duyệt đăng ký bảo vệ) as UC52
+}
+
+rectangle "6. Bảo vệ đồ án" as P2 #White {
+  usecase (UC-6.1 Lập hội đồng & phân công GV) as UC61
+  usecase (UC-6.2 Xếp lịch bảo vệ) as UC62
+  usecase (UC-6.3 Chuẩn bị hồ sơ cho HĐ) as UC63
+  usecase (UC-6.4 Tiến hành buổi bảo vệ) as UC64
+  usecase (UC-6.5 Chấm điểm & chốt kết quả) as UC65
+}
+
+rectangle "7. Hoàn thiện & lưu trữ" as P3 #White {
+  usecase (UC-7.1 Nộp bản cuối sau BV) as UC71
+  usecase (UC-7.2 GV/Chủ tịch HĐ duyệt bản cuối) as UC72
+  usecase (UC-7.3 Chốt kết quả thesis) as UC73
+  usecase (UC-7.4 Tra cứu & lưu trữ hồ sơ) as UC74
+}
+
+' ============ Xác thực ============
+PDT --> UC11 & UC12
+HEAD --> UC11 & UC12
+GV --> UC11 & UC12
+SV --> UC11 & UC12
+SSO --> UC11 : <<supports>>
+SSO --> UC12 : <<supports>>
+
+' ============ Thiết lập ============
+PDT --> UC21 & UC22
+HEAD --> UC22
+
+' ============ Quản lý đề tài ============
+GV --> UC31 & UC32
+HEAD --> UC32
+SV --> UC32
+
+' ============ Đề cương & Tiến độ ============
+SV --> UC41 & UC43
+GV --> UC42 & UC44
+
+' ============ Đăng ký bảo vệ ============
+SV --> UC51
+GV --> UC52
+
+' ============ Bảo vệ đồ án ============
+PDT --> UC61 & UC62 & UC63
+HEAD --> UC61
+SEC --> UC62 & UC63
+GV --> UC64 & UC65
+SV --> UC64
+CHAIR --> UC65
+
+' ============ Hoàn thiện & lưu trữ ============
+SV --> UC71 & UC74
+GV --> UC72 & UC74
+CHAIR --> UC72
+PDT --> UC73 & UC74
+
+' ============ INCLUDE ============
+UC32 ..> UC31 : <<include>>\n(chọn đề tài có sẵn)
+UC62 ..> UC61 : <<include>>\n(cần HĐ đã lập)
+UC64 ..> UC62 : <<include>>\n(cần đã xếp lịch)
+UC71 ..> UC65 : <<include>>\n(sau khi chấm)
+UC43 ..> UC42 : <<include>>\n(sau khi đề cương OK)
+
+@enduml
