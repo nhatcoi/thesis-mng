@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { AuthService } from './core/auth.service';
 import { LayoutComponent } from './layout/layout.component';
 import { LoginComponent } from './features/login/login.component';
+import { LoginDemoComponent } from './features/_minhhoa/login-demo.component';
 import { LandingComponent } from './features/landing/landing.component';
 import { DashboardComponent } from './features/dashboard/dashboard.component';
 import { NoAccessComponent } from './features/no-access/no-access.component';
@@ -39,6 +40,7 @@ const landingGuard = async () => {
 export const routes: Routes = [
   { path: '', component: LandingComponent, canActivate: [landingGuard], pathMatch: 'full' },
   { path: 'login', component: LoginComponent, canActivate: [loginGuard] },
+  { path: '_minhhoa', component: LoginDemoComponent },
   { path: 'no-access', component: NoAccessComponent },
   {
     path: '',
