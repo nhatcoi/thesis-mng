@@ -14,6 +14,6 @@ public enum NotificationType {
     DEFENSE_REVIEWED,               // GV duyệt/từ chối đăng ký bảo vệ → SV
     PROGRESS_REMINDER,
     DEFENSE_SCHEDULED,
-    SCORE_PUBLISHED,
+    GRADE_PUBLISHED,
     GENERAL
 }

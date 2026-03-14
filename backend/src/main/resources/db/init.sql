@@ -404,10 +404,10 @@ CREATE TABLE defense_assignments (
 );
 
 -- ============================================================
--- 12. SCORES (Chấm điểm chi tiết)
+-- 12. GRADES (Chấm điểm chi tiết)
 -- ============================================================
 
-CREATE TYPE score_type AS ENUM (
+CREATE TYPE grade_type AS ENUM (
     'ADVISOR',
     'CHAIR',
     'REVIEWER',
@@ -415,19 +415,19 @@ CREATE TYPE score_type AS ENUM (
     'MEMBER'
 );
 
-CREATE TABLE scores (
+CREATE TABLE grades (
     id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     thesis_id       UUID NOT NULL REFERENCES theses(id),
     scorer_id       UUID NOT NULL REFERENCES lecturers(id),
-    score_type      score_type NOT NULL,
+    grade_type      grade_type NOT NULL,
     score           NUMERIC(4,2) NOT NULL CHECK (score >= 0 AND score <= 10),
     comment         TEXT,
     scored_at       TIMESTAMPTZ DEFAULT NOW(),
 
-    CONSTRAINT uq_thesis_scorer_type UNIQUE (thesis_id, scorer_id, score_type)
+    CONSTRAINT uq_thesis_scorer_type UNIQUE (thesis_id, scorer_id, grade_type)
 );
 
-CREATE TABLE score_approval (
+CREATE TABLE grade_approvals (
     id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     thesis_id       UUID UNIQUE NOT NULL REFERENCES theses(id),
     final_score     NUMERIC(4,2) NOT NULL,
@@ -474,7 +474,7 @@ CREATE TYPE notification_type AS ENUM (
     'OUTLINE_REVIEWED',
     'PROGRESS_REMINDER',
     'DEFENSE_SCHEDULED',
-    'SCORE_PUBLISHED',
+    'GRADE_PUBLISHED',
     'TOPIC_REGISTERED',
     'GENERAL'
 );
@@ -531,7 +531,7 @@ CREATE INDEX idx_theses_status ON theses(status);
 CREATE INDEX idx_progress_thesis ON progress_reports(thesis_id);
 CREATE INDEX idx_outlines_thesis ON outlines(thesis_id);
 CREATE INDEX idx_defense_reg_thesis ON defense_registrations(thesis_id);
-CREATE INDEX idx_scores_thesis ON scores(thesis_id);
+CREATE INDEX idx_grades_thesis ON grades(thesis_id);
 CREATE INDEX idx_documents_thesis ON documents(thesis_id);
 
 CREATE INDEX idx_council_members_council ON council_members(council_id);

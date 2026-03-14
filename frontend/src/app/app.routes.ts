@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { AuthService } from './core/auth.service';
 import { LayoutComponent } from './layout/layout.component';
 import { LoginComponent } from './features/login/login.component';
+import { LandingComponent } from './features/landing/landing.component';
 import { DashboardComponent } from './features/dashboard/dashboard.component';
 import { NoAccessComponent } from './features/no-access/no-access.component';
 
@@ -25,7 +26,18 @@ const loginGuard = async () => {
   return true;
 };
 
+const landingGuard = async () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  await auth.ready$;
+  if (auth.isLoggedIn()) {
+    return router.parseUrl('/dashboard');
+  }
+  return true;
+};
+
 export const routes: Routes = [
+  { path: '', component: LandingComponent, canActivate: [landingGuard], pathMatch: 'full' },
   { path: 'login', component: LoginComponent, canActivate: [loginGuard] },
   { path: 'no-access', component: NoAccessComponent },
   {
@@ -33,7 +45,6 @@ export const routes: Routes = [
     component: LayoutComponent,
     canActivate: [authGuard],
     children: [
-      { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       { path: 'dashboard', component: DashboardComponent },
       { path: 'pdt/batches', loadComponent: () => import('./features/pdt/batches.component').then(m => m.BatchesComponent) },
       { path: 'pdt/batches/:id', loadComponent: () => import('./features/pdt/batch-detail.component').then(m => m.BatchDetailComponent) },
@@ -64,5 +75,5 @@ export const routes: Routes = [
       { path: 'support/:type', loadComponent: () => import('./features/shared/support.component').then(m => m.SupportComponent) },
     ]
   },
-  { path: '**', redirectTo: 'login' }
+  { path: '**', redirectTo: '' }
 ];

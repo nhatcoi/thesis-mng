@@ -1,4 +1,4 @@
-package com.phenikaa.thesis.scoring.entity;
+package com.phenikaa.thesis.grading.entity;
 
 import com.phenikaa.thesis.thesis.entity.Thesis;
 import com.phenikaa.thesis.user.entity.User;
@@ -9,13 +9,13 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "score_approval")
+@Table(name = "grade_approvals")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ScoreApproval {
+public class GradeApproval {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
